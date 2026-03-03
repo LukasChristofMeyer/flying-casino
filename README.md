@@ -18,7 +18,7 @@ Before running the project, navigate to the root directory and run
 npm install
 ```
 
-** Please don't upload your node-modules folder! Delete it before adding changes! **
+**Please don't upload your node-modules folder! Delete it before adding changes!**
 
 Currently, the main file is `webserver.js`, but this may change.
 You can run the webserver by doing
