@@ -23,7 +23,7 @@ app.get('/', (request, response) => {
 });
 
 // Let all files in the static folder be accessed publicly
-app.use('/static', express.static('static'));
+app.use('/', express.static('static'));
 
 app.listen(config.port, config.hostname, () => {
 	console.log(`flying-casino is live at http://${config.hostname}:${config.port}`);
