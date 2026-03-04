@@ -1,86 +1,547 @@
-.open-sans-custom-font {
-	font-family: "Open Sans", sans-serif;
-	font-optical-sizing: auto;
-	font-weight: 500;
-	font-style: normal;
-	font-variation-settings: "wdth" 100;
+/* ============================================================
+   main-page.css  —  Flying Casino front page
+   ============================================================ */
+
+/* ── RESET & VARIABLES ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.open-sans-custom-font-heavy {
-	font-family: "Open Sans", sans-serif;
-	font-optical-sizing: auto;
-	font-weight: 700;
-	font-style: normal;
-	font-variation-settings: "wdth" 100;
+:root {
+  --felt:        #1a5c2a;
+  --felt-light:  #217a36;
+  --felt-dark:   #0f3a1a;
+  --rail:        #5c3210;
+  --rail-light:  #7a4520;
+  --rail-dark:   #3a1f08;
+  --ivory:       #f5f0e0;
+  --gold:        #c9a84c;
+  --gold-light:  #f0d080;
+  --white-ball:  #f5f5f0;
+  --chalk-blue:  #6bb3c9;
 }
 
+/* ── BASE ── */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #0d0d0d;
+  font-family: 'Open Sans', sans-serif;
+  cursor: none;
+}
+
+/* ── CUSTOM CURSOR ── */
+#cursor {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: var(--white-ball);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  transition: width 0.1s, height 0.1s, background 0.1s;
+}
+
+/* ── HANGING LAMP ── */
+#lamp {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+#lamp-cord {
+  width: 3px;
+  height: 60px;
+  background: linear-gradient(180deg, #111, #333);
+}
+
+#lamp-shade {
+  width: 130px;
+  height: 44px;
+  background: linear-gradient(180deg, #2a1a08 0%, #4a2e10 60%, #6a3e18 100%);
+  clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+  border-bottom: 3px solid var(--gold);
+  position: relative;
+}
+
+#lamp-shade::after {
+  content: '';
+  position: absolute;
+  bottom: -18px;
+  left: -14px;
+  right: -14px;
+  height: 18px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 220, 100, 0.45) 0%, transparent 80%);
+}
+
+/* ── ROOM ── */
+#room {
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(ellipse at 50% 0%, #2a1a08 0%, #0d0905 65%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Light cone from lamp */
+#room::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 280px solid transparent;
+  border-right: 280px solid transparent;
+  border-top: 560px solid rgba(255, 230, 140, 0.06);
+  pointer-events: none;
+}
+
+/* ── TABLE WRAPPER ── */
+#table-wrap {
+  position: relative;
+  z-index: 5;
+  animation: tableFloat 6s ease-in-out infinite;
+}
+
+@keyframes tableFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-7px); }
+}
+
+/* ── RAIL (wood surround) ── */
+#rail {
+  width: 780px;
+  height: 460px;
+  background: linear-gradient(180deg, var(--rail-light) 0%, var(--rail) 40%, var(--rail-dark) 100%);
+  border-radius: 34px;
+  box-shadow:
+    0 0 0 4px #2a1208,
+    0 0 0 9px var(--rail-dark),
+    0 44px 88px rgba(0, 0, 0, 0.85),
+    0 12px 24px rgba(0, 0, 0, 0.6),
+    inset 0 2px 5px rgba(255, 255, 255, 0.12);
+  padding: 20px;
+  position: relative;
+}
+
+/* Gold inlay border */
+#rail::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border-radius: 28px;
+  border: 2px solid rgba(200, 160, 70, 0.35);
+  pointer-events: none;
+}
+
+/* ── FELT SURFACE ── */
+#felt {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 30%, var(--felt-light) 0%, var(--felt) 50%, var(--felt-dark) 100%);
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.55);
+}
+
+/* Felt weave texture */
+#felt::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.013) 3px,
+    rgba(255, 255, 255, 0.013) 4px
+  );
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+/* ── TABLE MARKINGS ── */
+.spot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.baulk-line {
+  position: absolute;
+  left: 22%;
+  top: 8%;
+  bottom: 8%;
+  width: 1.5px;
+  background: rgba(255, 255, 255, 0.13);
+  pointer-events: none;
+}
+
+.baulk-semi {
+  position: absolute;
+  left: calc(22% - 40px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 80px;
+  height: 80px;
+  border: 1.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: 0 80px 80px 0;
+  border-left: none;
+  pointer-events: none;
+}
+
+/* ── POCKETS ── */
+.pocket {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  background: radial-gradient(circle, #000 40%, #181818 100%);
+  border-radius: 50%;
+  border: 3px solid var(--rail-dark);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.8);
+  z-index: 3;
+}
+
+.pocket.tl { top: -5px; left: -5px; }
+.pocket.tm { top: -5px; left: 50%; transform: translateX(-50%); }
+.pocket.tr { top: -5px; right: -5px; }
+.pocket.bl { bottom: -5px; left: -5px; }
+.pocket.bm { bottom: -5px; left: 50%; transform: translateX(-50%); }
+.pocket.br { bottom: -5px; right: -5px; }
+
+/* ── BILLIARD BALLS ── */
+.ball {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow:
+    2px 4px 8px rgba(0, 0, 0, 0.6),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.3),
+    inset 2px 2px 5px rgba(255, 255, 255, 0.4);
+  transition: transform 0.18s;
+  cursor: none;
+}
+
+.b1  { width:28px; height:28px; background: radial-gradient(circle at 35% 30%, #fff8e0, #f0c010); top:38%; left:62%; }
+.b2  { width:26px; height:26px; background: radial-gradient(circle at 35% 30%, #ffaaaa, #cc0000); top:31%; left:66%; }
+.b3  { width:26px; height:26px; background: radial-gradient(circle at 35% 30%, #aaaaff, #2222cc); top:44%; left:66%; }
+.b4  { width:25px; height:25px; background: radial-gradient(circle at 35% 30%, #ffccaa, #cc4400); top:25%; left:70%; }
+.b5  { width:26px; height:26px; background: radial-gradient(circle at 35% 30%, #ffbbaa, #dd2200); top:38%; left:70%; }
+.b6  { width:25px; height:25px; background: radial-gradient(circle at 35% 30%, #aaffaa, #008800); top:50%; left:70%; }
+.b8  { width:30px; height:30px; background: radial-gradient(circle at 35% 30%, #555,    #111);    top:31%; left:73.5%; }
+.b9  { width:25px; height:25px; background: radial-gradient(circle at 35% 30%, #ffff88, #aaaa00); top:44%; left:73.5%; }
+.b10 { width:24px; height:24px; background: radial-gradient(circle at 35% 30%, #ffaaff, #880088); top:57%; left:73.5%; }
+.b11 { width:25px; height:25px; background: radial-gradient(circle at 35% 30%, #ffddaa, #ee6600); top:25%; left:77%; }
+.b15 { width:24px; height:24px; background: radial-gradient(circle at 35% 30%, #ffaaaa, #990000); top:57%; left:70%; }
+
+/* 8-ball number */
+.b8::after {
+  content: '8';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Open Sans', sans-serif;
+}
+
+/* Cue ball */
+.bcue {
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #ddddc8);
+  top: 44%; left: 25%;
+  box-shadow:
+    3px 5px 10px rgba(0, 0, 0, 0.5),
+    inset -2px -2px 5px rgba(0, 0, 0, 0.15),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.9);
+}
+
+/* ── CHALK ── */
+#chalk {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, var(--chalk-blue), #3a7a90);
+  border-radius: 2px;
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+  transform: rotate(-15deg);
+  z-index: 4;
+}
+
+/* ── CUE STICKS ── */
+.cue-stick {
+  position: absolute;
+  width: 3px;
+  height: 260px;
+  background: linear-gradient(180deg, #e8d090 0%, #c8a050 40%, #7a4820 100%);
+  border-radius: 2px 2px 0 0;
+  transform-origin: bottom center;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#cue-left  { left: 70px;  top: 40px; transform: rotate(22deg); }
+#cue-right { right: 70px; top: 40px; transform: rotate(-22deg); }
+
+.cue-tip {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--chalk-blue);
+  border-radius: 50% 50% 0 0;
+}
+
+/* ── RAIL PLAQUES ── */
+.plaque {
+  position: absolute;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(200, 160, 70, 0.45);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.plaque-tl { top: 7px; left: 54px; }
+.plaque-tr { top: 7px; right: 54px; }
+
+/* ── MAIN CONTAINER (centered on felt) ── */
 .main-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 100vw;
-	height: 100vh;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .main {
-	display: block;
-	text-align: center;
-	border-radius: 30px;
-	width: 600px;
-	height: 300px;
-	border: 2px solid rgb(223, 223, 223);
-	background-color: rgba(255, 255, 255, 0.3);
-
-	box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  pointer-events: all;
 }
 
+/* ── TITLE ── */
 #center-header {
-	/*background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);*/
-	background-image: linear-gradient(to right, #fa709a 0%, #fee140 100%);
-	background-clip: text;
-	color: transparent;
-	display: inline-block;
-	font-size: 80px;
-	margin: 0px;
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--gold-light);
+  letter-spacing: 3px;
+  text-shadow:
+    0 0 20px rgba(200, 160, 50, 0.85),
+    0 0 60px rgba(200, 160, 50, 0.4),
+    3px 3px 0 rgba(0, 0, 0, 0.55);
+  animation: titleGlow 3s ease-in-out infinite;
+  line-height: 1;
 }
 
-#name-input {
-	width: 300px;
-	height: 40px;
-	font-size: 35px;
-	border: 2px solid rgb(223, 223, 223);
-	border-radius: 30px;
-	padding: 8px;
-	padding-left: 20px;
-	padding-right: 20px;
-	outline: none;
+@keyframes titleGlow {
+  0%, 100% {
+    text-shadow:
+      0 0 20px rgba(200, 160, 50, 0.85),
+      0 0 60px rgba(200, 160, 50, 0.4),
+      3px 3px 0 rgba(0, 0, 0, 0.55);
+  }
+  50% {
+    text-shadow:
+      0 0 32px rgba(240, 200, 80, 1),
+      0 0 90px rgba(200, 160, 50, 0.65),
+      3px 3px 0 rgba(0, 0, 0, 0.55);
+  }
+}
 
-	box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+/* ── TAGLINE ── */
+.tagline {
+  font-size: 14px;
+  color: rgba(200, 200, 200, 0.55);
+  letter-spacing: 2px;
+  margin-top: 8px;
+  margin-bottom: 18px;
+  font-style: italic;
+}
+
+/* ── NAME INPUT ── */
+#name-input {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  padding: 10px 20px;
+  width: 240px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(200, 160, 70, 0.5);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--ivory);
+  outline: none;
+  text-align: center;
+  letter-spacing: 1px;
+  cursor: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 20px;
 }
 
 #name-input::placeholder {
-	color: rgb(204, 203, 203);
+  color: rgba(245, 240, 224, 0.35);
 }
 
+#name-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(200, 160, 50, 0.35);
+}
+
+/* ── BUTTON ROW ── */
+.btn-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 13px 32px;
+  border-radius: 4px;
+  cursor: none;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.2s;
+  user-select: none;
+  display: inline-block;
+}
+
+/* Shine sweep */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -60%;
+  width: 40%;
+  height: 300%;
+  background: rgba(255, 255, 255, 0.14);
+  transform: skewX(-20deg);
+  transition: left 0.4s;
+}
+
+.btn:hover::before { left: 160%; }
+.btn:hover         { transform: translateY(-3px); }
+.btn:active        { transform: translateY(0px); }
+
+.btn-solo {
+  background: linear-gradient(135deg, var(--felt-light), var(--felt-dark));
+  color: var(--ivory);
+  border: 2px solid var(--gold);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(200, 160, 70, 0.25);
+}
+
+.btn-multi {
+  background: linear-gradient(135deg, #c9a84c, #7a5c1a);
+  color: #1a0e04;
+  border: 2px solid var(--gold-light);
+  box-shadow: 0 4px 18px rgba(200, 160, 50, 0.35), 0 0 0 1px rgba(200, 160, 70, 0.4);
+}
+
+.btn-solo:hover  { box-shadow: 0 8px 28px rgba(0,0,0,0.6),      0 0 18px rgba(100,200,100,0.2); }
+.btn-multi:hover { box-shadow: 0 8px 28px rgba(200,160,50,0.55), 0 0 28px rgba(200,160,50,0.4); }
+
+/* ── DEV LINK ── */
+.dev-link {
+  margin-top: 4px;
+}
+
+.dev-link a,
 #network-test {
-	width: 300px;
-	height: 40px;
-	font-size: 20px;
-	color: grey;
-	border: 2px solid rgb(223, 223, 223);
-	border-radius: 30px;
-	padding: 8px;
-	padding-left: 20px;
-	padding-right: 20px;
-
-	text-decoration: none;
-
-	box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px;
+  color: rgba(200, 160, 70, 0.4);
+  text-decoration: none;
+  letter-spacing: 2px;
+  transition: color 0.2s;
+  cursor: none;
 }
 
-body {
-	background-color: hsla(204, 0%, 100%, 1);
-	background-image: radial-gradient(circle at 0% 0%, hsla(295, 77%, 74%, 0.35) 3.1210986267166043%, transparent 40%), radial-gradient(circle at 20% 0%, hsla(236, 77%, 74%, 0.35) 3.1210986267166043%, transparent 40%), radial-gradient(circle at 40% 0%, hsla(186, 77%, 74%, 0.35) 3.1210986267166043%, transparent 40%), radial-gradient(circle at 60% 0%, hsla(127, 77%, 74%, 0.35) 3.1210986267166043%, transparent 40%), radial-gradient(circle at 80% 0%, hsla(62, 77%, 74%, 0.35) 3.1210986267166043%, transparent 40%), radial-gradient(circle at 100% 0%, hsla(23, 77%, 74%, 0.35) 3%, transparent 40%);
-	background-blend-mode: normal, normal, normal, normal, normal, normal;
-	overflow: hidden;
+.dev-link a:hover,
+#network-test:hover {
+  color: rgba(200, 160, 70, 0.8);
+}
+
+/* ── AMBIENT FLOATING BALLS ── */
+.floaty {
+  position: fixed;
+  border-radius: 50%;
+  opacity: 0.07;
+  pointer-events: none;
+  animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+  0%   { transform: translateY(0) rotate(0deg);    opacity: 0.07; }
+  100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
+}
+
+/* ── RIPPLE (on felt click) ── */
+@keyframes rippleOut {
+  0%   { width: 4px;  height: 4px;  opacity: 1; }
+  100% { width: 90px; height: 90px; opacity: 0; }
+}
+
+/* ── FOOTER TAGLINE ── */
+#tagline-footer {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: rgba(255, 255, 255, 0.12);
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* ── FONT HELPERS (matching original) ── */
+.open-sans-custom-font {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+}
+
+.open-sans-custom-font-heavy {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 800;
 }
