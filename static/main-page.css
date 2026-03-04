@@ -2,7 +2,6 @@
    main-page.css  —  Flying Casino front page
    ============================================================ */
 
-/* ── RESET & VARIABLES ── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -10,24 +9,23 @@
 }
 
 :root {
-  --felt:        #1a5c2a;
-  --felt-light:  #217a36;
-  --felt-dark:   #0f3a1a;
-  --rail:        #5c3210;
-  --rail-light:  #7a4520;
-  --rail-dark:   #3a1f08;
-  --ivory:       #f5f0e0;
-  --gold:        #c9a84c;
-  --gold-light:  #f0d080;
-  --white-ball:  #f5f5f0;
-  --chalk-blue:  #6bb3c9;
+  --felt:       #1a5c2a;
+  --felt-light: #217a36;
+  --felt-dark:  #0f3a1a;
+  --rail:       #5c3210;
+  --rail-light: #7a4520;
+  --rail-dark:  #3a1f08;
+  --ivory:      #f5f0e0;
+  --gold:       #c9a84c;
+  --gold-light: #f0d080;
+  --white-ball: #f5f5f0;
+  --chalk-blue: #6bb3c9;
 }
 
-/* ── BASE ── */
 html, body {
   height: 100%;
   overflow: hidden;
-  background: #0d0d0d;
+  background: #0a0a0a;
   font-family: 'Open Sans', sans-serif;
   cursor: none;
 }
@@ -42,8 +40,39 @@ html, body {
   pointer-events: none;
   z-index: 9999;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 10px rgba(255,255,255,0.6);
   transition: width 0.1s, height 0.1s, background 0.1s;
+}
+
+/* ── ROOM ── */
+#room {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+/* ── LAMP LIGHT — radial cone from top center ── */
+#room::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 100vh;
+  background: radial-gradient(
+    ellipse 60% 80% at 50% 0%,
+    rgba(255, 210, 100, 0.18) 0%,
+    rgba(200, 150, 50, 0.08) 35%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* ── HANGING LAMP ── */
@@ -60,107 +89,79 @@ html, body {
 }
 
 #lamp-cord {
-  width: 3px;
-  height: 60px;
-  background: linear-gradient(180deg, #111, #333);
+  width: 2px;
+  height: 55px;
+  background: linear-gradient(180deg, #222, #444);
 }
 
 #lamp-shade {
-  width: 130px;
-  height: 44px;
-  background: linear-gradient(180deg, #2a1a08 0%, #4a2e10 60%, #6a3e18 100%);
-  clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
-  border-bottom: 3px solid var(--gold);
+  width: 110px;
+  height: 36px;
+  background: linear-gradient(180deg, #1e1208 0%, #3a2208 60%, #5a3010 100%);
+  clip-path: polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%);
+  border-bottom: 2px solid var(--gold);
   position: relative;
 }
 
+/* Warm glow spilling out from bottom of shade */
 #lamp-shade::after {
   content: '';
   position: absolute;
-  bottom: -18px;
-  left: -14px;
-  right: -14px;
-  height: 18px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255, 220, 100, 0.45) 0%, transparent 80%);
-}
-
-/* ── ROOM ── */
-#room {
-  width: 100vw;
-  height: 100vh;
-  background: radial-gradient(ellipse at 50% 0%, #2a1a08 0%, #0d0905 65%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Light cone from lamp */
-#room::before {
-  content: '';
-  position: absolute;
-  top: -60px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 280px solid transparent;
-  border-right: 280px solid transparent;
-  border-top: 560px solid rgba(255, 230, 140, 0.06);
-  pointer-events: none;
+  bottom: -20px;
+  left: -20px;
+  right: -20px;
+  height: 20px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 210, 100, 0.6) 0%, transparent 80%);
 }
 
 /* ── TABLE WRAPPER ── */
 #table-wrap {
   position: relative;
   z-index: 5;
-  animation: tableFloat 6s ease-in-out infinite;
+  animation: tableFloat 7s ease-in-out infinite;
 }
 
 @keyframes tableFloat {
   0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-7px); }
+  50%       { transform: translateY(-5px); }
 }
 
-/* ── RAIL (wood surround) ── */
+/* ── RAIL ── */
 #rail {
-  width: 780px;
-  height: 460px;
+  width: 740px;
+  height: 440px;
   background: linear-gradient(180deg, var(--rail-light) 0%, var(--rail) 40%, var(--rail-dark) 100%);
-  border-radius: 34px;
+  border-radius: 32px;
   box-shadow:
-    0 0 0 4px #2a1208,
-    0 0 0 9px var(--rail-dark),
-    0 44px 88px rgba(0, 0, 0, 0.85),
-    0 12px 24px rgba(0, 0, 0, 0.6),
-    inset 0 2px 5px rgba(255, 255, 255, 0.12);
-  padding: 20px;
+    0 0 0 4px #1e0d04,
+    0 0 0 8px var(--rail-dark),
+    0 50px 100px rgba(0,0,0,0.9),
+    0 15px 30px rgba(0,0,0,0.7),
+    inset 0 2px 4px rgba(255,255,255,0.1);
+  padding: 18px;
   position: relative;
 }
 
-/* Gold inlay border */
 #rail::before {
   content: '';
   position: absolute;
-  inset: 9px;
-  border-radius: 28px;
-  border: 2px solid rgba(200, 160, 70, 0.35);
+  inset: 8px;
+  border-radius: 26px;
+  border: 1.5px solid rgba(200,160,70,0.3);
   pointer-events: none;
 }
 
-/* ── FELT SURFACE ── */
+/* ── FELT ── */
 #felt {
   width: 100%;
   height: 100%;
-  background: radial-gradient(ellipse at 50% 30%, var(--felt-light) 0%, var(--felt) 50%, var(--felt-dark) 100%);
-  border-radius: 18px;
+  background: radial-gradient(ellipse at 50% 40%, var(--felt-light) 0%, var(--felt) 55%, var(--felt-dark) 100%);
+  border-radius: 16px;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
 }
 
-/* Felt weave texture */
 #felt::before {
   content: '';
   position: absolute;
@@ -169,23 +170,24 @@ html, body {
     90deg,
     transparent,
     transparent 3px,
-    rgba(255, 255, 255, 0.013) 3px,
-    rgba(255, 255, 255, 0.013) 4px
+    rgba(255,255,255,0.012) 3px,
+    rgba(255,255,255,0.012) 4px
   );
-  border-radius: 18px;
+  border-radius: 16px;
   pointer-events: none;
 }
 
 /* ── TABLE MARKINGS ── */
 .spot {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.22);
+  width: 7px;
+  height: 7px;
+  background: rgba(255,255,255,0.2);
   border-radius: 50%;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 .baulk-line {
@@ -193,20 +195,20 @@ html, body {
   left: 22%;
   top: 8%;
   bottom: 8%;
-  width: 1.5px;
-  background: rgba(255, 255, 255, 0.13);
+  width: 1px;
+  background: rgba(255,255,255,0.12);
   pointer-events: none;
 }
 
 .baulk-semi {
   position: absolute;
-  left: calc(22% - 40px);
+  left: calc(22% - 36px);
   top: 50%;
   transform: translateY(-50%);
-  width: 80px;
-  height: 80px;
-  border: 1.5px solid rgba(255, 255, 255, 0.13);
-  border-radius: 0 80px 80px 0;
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 0 72px 72px 0;
   border-left: none;
   pointer-events: none;
 }
@@ -214,107 +216,106 @@ html, body {
 /* ── POCKETS ── */
 .pocket {
   position: absolute;
-  width: 38px;
-  height: 38px;
-  background: radial-gradient(circle, #000 40%, #181818 100%);
+  width: 36px;
+  height: 36px;
+  background: radial-gradient(circle, #000 50%, #111 100%);
   border-radius: 50%;
   border: 3px solid var(--rail-dark);
-  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 0 12px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.9);
   z-index: 3;
 }
 
-.pocket.tl { top: -5px; left: -5px; }
-.pocket.tm { top: -5px; left: 50%; transform: translateX(-50%); }
-.pocket.tr { top: -5px; right: -5px; }
-.pocket.bl { bottom: -5px; left: -5px; }
-.pocket.bm { bottom: -5px; left: 50%; transform: translateX(-50%); }
-.pocket.br { bottom: -5px; right: -5px; }
+.pocket.tl { top: -4px;    left: -4px; }
+.pocket.tm { top: -4px;    left: 50%; transform: translateX(-50%); }
+.pocket.tr { top: -4px;    right: -4px; }
+.pocket.bl { bottom: -4px; left: -4px; }
+.pocket.bm { bottom: -4px; left: 50%; transform: translateX(-50%); }
+.pocket.br { bottom: -4px; right: -4px; }
 
-/* ── BILLIARD BALLS ── */
+/* ── BALLS — parked neatly in bottom-right corner ── */
 .ball {
   position: absolute;
   border-radius: 50%;
   box-shadow:
-    2px 4px 8px rgba(0, 0, 0, 0.6),
-    inset -3px -3px 6px rgba(0, 0, 0, 0.3),
-    inset 2px 2px 5px rgba(255, 255, 255, 0.4);
+    2px 3px 7px rgba(0,0,0,0.65),
+    inset -2px -2px 5px rgba(0,0,0,0.3),
+    inset 2px 2px 4px rgba(255,255,255,0.4);
   transition: transform 0.18s;
   cursor: none;
+  z-index: 2;
 }
 
-.b1  { width:28px; height:28px; background: radial-gradient(circle at 35% 30%, #fff8e0, #f0c010); top:38%; left:62%; }
-.b2  { width:26px; height:26px; background: radial-gradient(circle at 35% 30%, #ffaaaa, #cc0000); top:31%; left:66%; }
-.b3  { width:26px; height:26px; background: radial-gradient(circle at 35% 30%, #aaaaff, #2222cc); top:44%; left:66%; }
-.b4  { width:25px; height:25px; background: radial-gradient(circle at 35% 30%, #ffccaa, #cc4400); top:25%; left:70%; }
-.b5  { width:26px; height:26px; background: radial-gradient(circle at 35% 30%, #ffbbaa, #dd2200); top:38%; left:70%; }
-.b6  { width:25px; height:25px; background: radial-gradient(circle at 35% 30%, #aaffaa, #008800); top:50%; left:70%; }
-.b8  { width:30px; height:30px; background: radial-gradient(circle at 35% 30%, #555,    #111);    top:31%; left:73.5%; }
-.b9  { width:25px; height:25px; background: radial-gradient(circle at 35% 30%, #ffff88, #aaaa00); top:44%; left:73.5%; }
-.b10 { width:24px; height:24px; background: radial-gradient(circle at 35% 30%, #ffaaff, #880088); top:57%; left:73.5%; }
-.b11 { width:25px; height:25px; background: radial-gradient(circle at 35% 30%, #ffddaa, #ee6600); top:25%; left:77%; }
-.b15 { width:24px; height:24px; background: radial-gradient(circle at 35% 30%, #ffaaaa, #990000); top:57%; left:70%; }
+/* Triangle rack — bottom right of felt, out of the way of UI */
+.b1  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #fff8e0, #f0c010); bottom:22%; right:14%; }
+.b2  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #ffaaaa, #cc0000); bottom:30%; right:18%; }
+.b3  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #aaaaff, #2222cc); bottom:22%; right:22%; }
+.b4  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #ffccaa, #cc4400); bottom:38%; right:14%; }
+.b5  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #ffbbaa, #dd2200); bottom:38%; right:22%; }
+.b6  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #aaffaa, #008800); bottom:46%; right:18%; }
+.b8  { width:24px; height:24px; background: radial-gradient(circle at 35% 30%, #555, #111);       bottom:30%; right:10%; }
+.b9  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #ffff88, #aaaa00); bottom:46%; right:10%; }
+.b10 { width:21px; height:21px; background: radial-gradient(circle at 35% 30%, #ffaaff, #880088); bottom:54%; right:14%; }
+.b11 { width:21px; height:21px; background: radial-gradient(circle at 35% 30%, #ffddaa, #ee6600); bottom:54%; right:22%; }
+.b15 { width:21px; height:21px; background: radial-gradient(circle at 35% 30%, #ffaaaa, #990000); bottom:46%; right:26%; }
 
-/* 8-ball number */
 .b8::after {
   content: '8';
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   color: #fff;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
-  font-family: 'Open Sans', sans-serif;
 }
 
-/* Cue ball */
+/* Cue ball — left side */
 .bcue {
-  width: 30px;
-  height: 30px;
+  width: 26px; height: 26px;
   background: radial-gradient(circle at 35% 30%, #ffffff, #ddddc8);
-  top: 44%; left: 25%;
+  bottom: 38%; left: 12%;
   box-shadow:
-    3px 5px 10px rgba(0, 0, 0, 0.5),
-    inset -2px -2px 5px rgba(0, 0, 0, 0.15),
-    inset 3px 3px 6px rgba(255, 255, 255, 0.9);
+    2px 4px 8px rgba(0,0,0,0.5),
+    inset -2px -2px 4px rgba(0,0,0,0.1),
+    inset 3px 3px 5px rgba(255,255,255,0.9);
 }
 
 /* ── CHALK ── */
 #chalk {
   position: absolute;
-  top: 16px;
-  right: 24px;
-  width: 18px;
-  height: 18px;
+  top: 14px;
+  right: 20px;
+  width: 14px;
+  height: 14px;
   background: linear-gradient(135deg, var(--chalk-blue), #3a7a90);
   border-radius: 2px;
-  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
-  transform: rotate(-15deg);
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  transform: rotate(-12deg);
   z-index: 4;
 }
 
 /* ── CUE STICKS ── */
 .cue-stick {
   position: absolute;
-  width: 3px;
-  height: 260px;
+  width: 2px;
+  height: 220px;
   background: linear-gradient(180deg, #e8d090 0%, #c8a050 40%, #7a4820 100%);
   border-radius: 2px 2px 0 0;
   transform-origin: bottom center;
-  opacity: 0.45;
+  opacity: 0.35;
   pointer-events: none;
   z-index: 2;
 }
 
-#cue-left  { left: 70px;  top: 40px; transform: rotate(22deg); }
-#cue-right { right: 70px; top: 40px; transform: rotate(-22deg); }
+#cue-left  { left: 60px;  top: 50px; transform: rotate(20deg); }
+#cue-right { right: 60px; top: 50px; transform: rotate(-20deg); }
 
 .cue-tip {
   position: absolute;
-  top: -6px;
+  top: -5px;
   left: 50%;
   transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   background: var(--chalk-blue);
   border-radius: 50% 50% 0 0;
 }
@@ -323,17 +324,17 @@ html, body {
 .plaque {
   position: absolute;
   font-family: 'Cinzel', serif;
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: 2px;
-  color: rgba(200, 160, 70, 0.45);
+  color: rgba(200,160,70,0.35);
   text-transform: uppercase;
   pointer-events: none;
 }
 
-.plaque-tl { top: 7px; left: 54px; }
-.plaque-tr { top: 7px; right: 54px; }
+.plaque-tl { top: 6px; left: 48px; }
+.plaque-tr { top: 6px; right: 48px; }
 
-/* ── MAIN CONTAINER (centered on felt) ── */
+/* ── MAIN CONTAINER ── */
 .main-container {
   position: absolute;
   inset: 0;
@@ -348,47 +349,46 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
   pointer-events: all;
 }
 
 /* ── TITLE ── */
 #center-header {
   font-family: 'Playfair Display', serif;
-  font-size: 48px;
+  font-size: 46px;
   font-weight: 900;
   color: var(--gold-light);
-  letter-spacing: 3px;
-  text-shadow:
-    0 0 20px rgba(200, 160, 50, 0.85),
-    0 0 60px rgba(200, 160, 50, 0.4),
-    3px 3px 0 rgba(0, 0, 0, 0.55);
-  animation: titleGlow 3s ease-in-out infinite;
+  letter-spacing: 2px;
   line-height: 1;
+  text-shadow:
+    0 0 18px rgba(200,160,50,0.9),
+    0 0 50px rgba(200,160,50,0.35),
+    2px 3px 0 rgba(0,0,0,0.5);
+  animation: titleGlow 3.5s ease-in-out infinite;
 }
 
 @keyframes titleGlow {
   0%, 100% {
     text-shadow:
-      0 0 20px rgba(200, 160, 50, 0.85),
-      0 0 60px rgba(200, 160, 50, 0.4),
-      3px 3px 0 rgba(0, 0, 0, 0.55);
+      0 0 18px rgba(200,160,50,0.9),
+      0 0 50px rgba(200,160,50,0.35),
+      2px 3px 0 rgba(0,0,0,0.5);
   }
   50% {
     text-shadow:
-      0 0 32px rgba(240, 200, 80, 1),
-      0 0 90px rgba(200, 160, 50, 0.65),
-      3px 3px 0 rgba(0, 0, 0, 0.55);
+      0 0 28px rgba(240,200,80,1),
+      0 0 80px rgba(200,160,50,0.6),
+      2px 3px 0 rgba(0,0,0,0.5);
   }
 }
 
 /* ── TAGLINE ── */
 .tagline {
-  font-size: 14px;
-  color: rgba(200, 200, 200, 0.55);
+  font-size: 13px;
+  color: rgba(210,210,200,0.5);
   letter-spacing: 2px;
-  margin-top: 8px;
-  margin-bottom: 18px;
+  margin-top: 6px;
+  margin-bottom: 20px;
   font-style: italic;
 }
 
@@ -397,44 +397,41 @@ html, body {
   font-family: 'Open Sans', sans-serif;
   font-size: 14px;
   padding: 10px 20px;
-  width: 240px;
-  border-radius: 4px;
-  border: 1.5px solid rgba(200, 160, 70, 0.5);
-  background: rgba(0, 0, 0, 0.45);
+  width: 260px;
+  border-radius: 3px;
+  border: 1.5px solid rgba(200,160,70,0.4);
+  background: rgba(0,0,0,0.4);
   color: var(--ivory);
   outline: none;
   text-align: center;
   letter-spacing: 1px;
   cursor: none;
   transition: border-color 0.2s, box-shadow 0.2s;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
-#name-input::placeholder {
-  color: rgba(245, 240, 224, 0.35);
-}
+#name-input::placeholder { color: rgba(245,240,224,0.3); }
 
 #name-input:focus {
   border-color: var(--gold);
-  box-shadow: 0 0 12px rgba(200, 160, 50, 0.35);
-}
-
-/* ── BUTTON ROW ── */
-.btn-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  box-shadow: 0 0 10px rgba(200,160,50,0.3);
 }
 
 /* ── BUTTONS ── */
+.btn-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
 .btn {
   font-family: 'Cinzel', serif;
   font-size: 12px;
   letter-spacing: 3px;
   text-transform: uppercase;
   text-decoration: none;
-  padding: 13px 32px;
-  border-radius: 4px;
+  padding: 12px 30px;
+  border-radius: 3px;
   cursor: none;
   position: relative;
   overflow: hidden;
@@ -443,105 +440,89 @@ html, body {
   display: inline-block;
 }
 
-/* Shine sweep */
 .btn::before {
   content: '';
   position: absolute;
-  top: -100%;
-  left: -60%;
-  width: 40%;
-  height: 300%;
-  background: rgba(255, 255, 255, 0.14);
+  top: -100%; left: -60%;
+  width: 40%; height: 300%;
+  background: rgba(255,255,255,0.12);
   transform: skewX(-20deg);
   transition: left 0.4s;
 }
 
 .btn:hover::before { left: 160%; }
-.btn:hover         { transform: translateY(-3px); }
-.btn:active        { transform: translateY(0px); }
+.btn:hover         { transform: translateY(-2px); }
+.btn:active        { transform: translateY(0); }
 
 .btn-solo {
   background: linear-gradient(135deg, var(--felt-light), var(--felt-dark));
   color: var(--ivory);
-  border: 2px solid var(--gold);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(200, 160, 70, 0.25);
+  border: 1.5px solid var(--gold);
+  box-shadow: 0 3px 14px rgba(0,0,0,0.5);
 }
 
 .btn-multi {
   background: linear-gradient(135deg, #c9a84c, #7a5c1a);
   color: #1a0e04;
-  border: 2px solid var(--gold-light);
-  box-shadow: 0 4px 18px rgba(200, 160, 50, 0.35), 0 0 0 1px rgba(200, 160, 70, 0.4);
+  border: 1.5px solid var(--gold-light);
+  box-shadow: 0 3px 14px rgba(200,160,50,0.3);
 }
 
-.btn-solo:hover  { box-shadow: 0 8px 28px rgba(0,0,0,0.6),      0 0 18px rgba(100,200,100,0.2); }
-.btn-multi:hover { box-shadow: 0 8px 28px rgba(200,160,50,0.55), 0 0 28px rgba(200,160,50,0.4); }
+.btn-solo:hover  { box-shadow: 0 6px 24px rgba(0,0,0,0.6),      0 0 14px rgba(100,200,100,0.15); }
+.btn-multi:hover { box-shadow: 0 6px 24px rgba(200,160,50,0.5),  0 0 20px rgba(200,160,50,0.35); }
 
 /* ── DEV LINK ── */
-.dev-link {
-  margin-top: 4px;
-}
+.dev-link { margin-top: 2px; }
 
-.dev-link a,
-#network-test {
+.dev-link a, #network-test {
   font-family: 'Open Sans', sans-serif;
   font-size: 11px;
-  color: rgba(200, 160, 70, 0.4);
+  color: rgba(200,160,70,0.35);
   text-decoration: none;
   letter-spacing: 2px;
   transition: color 0.2s;
   cursor: none;
 }
 
-.dev-link a:hover,
-#network-test:hover {
-  color: rgba(200, 160, 70, 0.8);
-}
+.dev-link a:hover, #network-test:hover { color: rgba(200,160,70,0.75); }
 
 /* ── AMBIENT FLOATING BALLS ── */
 .floaty {
   position: fixed;
   border-radius: 50%;
-  opacity: 0.07;
+  opacity: 0.06;
   pointer-events: none;
   animation: floatUp linear infinite;
 }
 
 @keyframes floatUp {
-  0%   { transform: translateY(0) rotate(0deg);    opacity: 0.07; }
+  0%   { transform: translateY(0) rotate(0deg);    opacity: 0.06; }
   100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
 }
 
-/* ── RIPPLE (on felt click) ── */
+/* ── RIPPLE ── */
 @keyframes rippleOut {
   0%   { width: 4px;  height: 4px;  opacity: 1; }
   100% { width: 90px; height: 90px; opacity: 0; }
 }
 
-/* ── FOOTER TAGLINE ── */
-#tagline-footer {
+/* ── CREDITS FOOTER ── */
+#credits {
   position: fixed;
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   font-family: 'Open Sans', sans-serif;
   font-weight: 300;
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 5px;
-  color: rgba(255, 255, 255, 0.12);
+  color: rgba(255,255,255,0.1);
   text-transform: uppercase;
   white-space: nowrap;
   z-index: 100;
   pointer-events: none;
 }
 
-/* ── FONT HELPERS (matching original) ── */
-.open-sans-custom-font {
-  font-family: 'Open Sans', sans-serif;
-  font-weight: 400;
-}
-
-.open-sans-custom-font-heavy {
-  font-family: 'Open Sans', sans-serif;
-  font-weight: 800;
-}
+/* ── FONT HELPERS ── */
+.open-sans-custom-font       { font-family: 'Open Sans', sans-serif; font-weight: 400; }
+.open-sans-custom-font-heavy { font-family: 'Open Sans', sans-serif; font-weight: 800; }
