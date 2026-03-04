@@ -9,24 +9,6 @@ name_input.onkeydown = event => {
 	}
 }
 
-// ── Ambient floating balls ──
-const ballColors = ['#f0c010','#cc0000','#2222cc','#008800','#cc4400','#111111','#aaaa00','#880088'];
-for (let i = 0; i < 14; i++) {
-	const el = document.createElement('div');
-	el.className = 'floaty';
-	const size = 10 + Math.random() * 28;
-	el.style.cssText = `
-		width: ${size}px;
-		height: ${size}px;
-		background: ${ballColors[Math.floor(Math.random() * ballColors.length)]};
-		left: ${Math.random() * 100}vw;
-		bottom: ${-40 + Math.random() * -80}px;
-		animation-duration: ${9 + Math.random() * 13}s;
-		animation-delay: ${Math.random() * 12}s;
-	`;
-	document.body.appendChild(el);
-}
-
 // ── Custom cursor ──
 const cursor = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
