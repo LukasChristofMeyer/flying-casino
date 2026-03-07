@@ -51,7 +51,7 @@ document.getElementById('felt').addEventListener('click', function(e) {
 });
 
 // ── Ball jiggle on hover ──
-document.querySelectorAll('.ball').forEach(ball => {
+document.querySelectorAll('.ball, .bcue').forEach(ball => {
 	ball.addEventListener('mouseenter', function() {
 		const tx = (Math.random() - 0.5) * 10;
 		const ty = (Math.random() - 0.5) * 10;
