@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang = "en">
+<link rel="stylesheet" href="cards-demo.css">
 
 <head>
 	<title>The Flying Casino</title>
@@ -7,20 +8,6 @@
 
 <body>
 	<main>
-		You currently have: <span id="currentChips">100</span> chips
-		</br> </br>
-
-		Current Bet: <span id="currentBet">0</span>
-		</br>
-		<button id="callButton" title ="Plays with current bet">Call Current Bet</button>
-		</br>
-		<button id="foldButton" title ="Resets bet to 0">Fold to Current Bet</button>
-		</br> </br>
-
-		Raise Bet To: <input id="bettingInput" title = "Play a bet higher than the current" placeholder="Place your bet!" value="1">
-		<button id="raiseButton">Raise Bet</button>
-		</br> </br>
-
 		Select Game:
 		<select id="gameSelect">
 			<option value ="">No Game Selected</option>
@@ -28,126 +15,39 @@
 		</select>
 		<button id="selectGameButton">Select Game</button>
 
-		<!-- 	This is a specific UI for Video Poker, which has your turn end after selecting cards. There would be another for normal poker.
-				This is since in normal Poker, your turn ends after calling, folding, or raising, and you cannot select cards.
-		-->
-		<div id="selectUI" hidden>
-			Your Hand:
-			<ul id="handList"></ul>
-			<button id="useSelectedCardsButton" disabled>Discard Cards</button>
-		</div>
+		<div id="gameSpace" data-type="none"></div>
 	</main>
 
-	<!-- 	Everything down here is honestly a mess rushed together to make something work.
-	 		That is commentable, since I do imply the above is a generally decent structure for a webpage for our card games -->
 	<script type = "module">
-		import { pokerHandType, VideoPoker } from "./poker.js"
+		import { VideoPokerHTMLHandler } from "./poker.js"
 		
-		const currentChips = document.getElementById("currentChips")
-		const currentBet = document.getElementById("currentBet")
-		const callButton = document.getElementById("callButton")
-		const foldButton = document.getElementById("foldButton")
-		const bettingInput = document.getElementById("bettingInput")
-		const raiseButton = document.getElementById("raiseButton")
 		const gameSelect = document.getElementById("gameSelect")
 		const selectGameButton = document.getElementById("selectGameButton")
-		const selectUI = document.getElementById("selectUI")
-		const handList = document.getElementById("handList")
-		const useSelectedCardsButton = document.getElementById("useSelectedCardsButton")
-
-		var game = false
-		var hands = []
-
-		function playVideoPoker() {
-			callButton.disabled = true
-			raiseButton.disabled = true
-			game.deal(2, hands)
-			
-			handList.innerHTML = ""
-			// Arguably, this could all be done inline for efficiency reasons, just like we declared cards in deck.js for
-			// But I'm a bit lazy, and for something like this reusability is nice.
-			for (var i = 0; i < hands[0].length; i++) {
-				const li = document.createElement("li")
-				li.innerText = `${hands[0][i].label} of ${hands[0][i].suit}s`
-				li.classList.add("selectable")
-				li.dataset.id = i
-				handList.appendChild(li)
-			}
-
-			const selectableCards = document.querySelectorAll('.selectable');
-			selectableCards.forEach(card => {
-				card.addEventListener('click', () => {
-					if (card.style.color != "red") {
-						card.style.color = "red"
-					} else {
-						card.style.color = "black"
-					}
-				})
-			})
-
-			useSelectedCardsButton.disabled = false
-
-			useSelectedCardsButton.onclick = () => {
-				selectableCards.forEach(card => {
-					// Very stupid way of checking what cards are selected, but whatever, it works, and this is a demo!
-					if (card.style.color == "red") {
-						hands[0][card.dataset.id] = hands[1][card.dataset.id] // Discard and replace
-						card.innerText = `${hands[0][card.dataset.id].label} of ${hands[0][card.dataset.id].suit}s`
-					}
-				})
-				
-				switch(pokerHandType(hands[0])) {
-					case "Pair": case "High Card":
-						currentChips.textContent = Number(currentChips.textContent) - Number(currentBet.textContent)
-						
-						// Just because I thought it was a funny idea, especially for right now.
-						// I mean, what else happens when you run out of chips? Go to the ATM?
-						if (Number(currentChips.textContent) - Number(currentBet.textContent) <= 0) {
-							const main = document.querySelector("main")
-							main.hidden = true
-
-							const shaming = document.createElement("h1")
-							shaming.style.color = "red"
-							shaming.innerHTML = `You lost the last bet, and are now left destitute or in debt with a balance of ${currentChips.textContent} chips
-												<br><br>You are promptly kicked out of the Flying Casino right into the open air
-												<br><br>I hope it isn't flying too high 
-												<br> Muahahahahaha!!!!!!
-												<br><br><br><br><br><br>Better luck next time ☹`
-							const body = document.querySelector("body")
-							body.appendChild(shaming)
-						}
-
-						break;
-					default:
-						currentChips.textContent = Number(currentChips.textContent) + Number(currentBet.textContent)*2
-						const celebration = document.createElement("h1")
-						celebration.innerText = `You got a ${pokerHandType(hands[0])}! You won ${Number(currentBet.textContent)*2} chips!`
-						handList.appendChild(celebration)
-				}
-				game.reset()
-				useSelectedCardsButton.disabled = true
-
-				callButton.disabled = false
-				raiseButton.disabled = false
-			}
-		}
-
+		const gameSpace = document.getElementById("gameSpace")
+		
+		var htmlHandler = null
+		
 		gameSelect.addEventListener("change", (event) => {
 			switch(gameSelect.value) {
 				case "videoPoker": 
-					game = new VideoPoker()
-					selectUI.hidden = false
-					foldButton.onclick = () => {currentBet.textContent = 0}
-					callButton.onclick = () => {playVideoPoker()}
-					raiseButton.onclick = () => {
-						currentBet.textContent = bettingInput.value
-						playVideoPoker()
-					}
+					gameSpace.dataset.type = "videoPoker"
+					htmlHandler = new VideoPokerHTMLHandler(document, gameSpace)
+					htmlHandler.currentChips.textContent = 100
+
+					// The idea with the htmlHandler is it handles all HTML that the game itself needs.
+					// As for making it actually look pretty, it is entirely up to the caller of htmlHandler.
+					gameSpace.insertBefore(document.createElement("br"), htmlHandler.betInput)
+
+					const betLabel = document.createElement("label")
+					betLabel.innerText = "Current Bet: "
+					betLabel.setAttribute("for", "videoPokerBetInput")
+					gameSpace.insertBefore(betLabel, htmlHandler.betInput)
 
 					break
 				default: 
-					selectUI.hidden = true 
-					game = false
+					htmlHandler = null
+					gameSpace.innerHTML = ""
+					gameSpace.dataset.type = "none"
 					break
 			}
 		})
