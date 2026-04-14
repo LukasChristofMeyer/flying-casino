@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Texas Hold 'Em – The Flying Casino</title>
+	<style>
+		.currentChips::before { content: "Current Chips: "; }
+		li.card[data-label][data-suit]::before { content: attr(data-label) " of " attr(data-suit)"s"; }
+		li.card[data-selected="TRUE"] { color: red; }
+		li.card[data-selected=FALSE] { color: black; }
+		div.gameOutput { display: flex; flex-direction: column-reverse; }
+	</style>
+</head>
+
+<body>
+	<main>
+		<a href="../lobby/lobby.html">← Back to Lobby</a>
+		<br><br>
+		<h2>Texas Hold 'Em</h2>
+		<div id="gameSpace"></div>
+	</main>
+
+	<script type="module">
+		import { TexasHoldEmHTMLHandler, Player } from "./poker.js"
+		import { constructNetworkAPI } from "../network/network.js"
+
+		const gameSpace = document.getElementById("gameSpace")
+
+		var htmlHandler = null
+		var network = await constructNetworkAPI("wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/")
+
+		network.onMessage = (message) => {
+			let messageObject = JSON.parse(message.data)
+			if (messageObject.type === "texasHoldEm") {
+				htmlHandler.recieveAction(messageObject)
+			}
+		}
+
+		var texasHoldEmPlayers = []
+
+		// The first player is ourselves, passing incoming objects to our own receiver.
+		texasHoldEmPlayers.push(new Player((object) => htmlHandler.recieveAction(object)))
+
+		for (const peer of Object.values(network.peers)) {
+			texasHoldEmPlayers.push(new Player((object) => network.sendObject(object, peer.PeerId)))
+		}
+
+		htmlHandler = new TexasHoldEmHTMLHandler(document, gameSpace, texasHoldEmPlayers, 0)
+	</script>
+</body>
+
+</html>
