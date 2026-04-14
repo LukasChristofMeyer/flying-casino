@@ -10,6 +10,7 @@ import os
 """
 rooms = {}
 
+
 # Inevitably, the signaling server has to do some relaying.
 # However, it is exclusively for signaling. Thus, colloquially, it is a signaling server, not a relay server.
 # Though, in my opinion, a signaling server is thus definitely just a type / subset of relay server, but what do I know?
@@ -23,31 +24,35 @@ async def handler(websocket):
 		async for message in websocket:
 			data = json.loads(message)
 
-			if "arriving" in data :
-				room_id = data["room"]
-				if room_id not in rooms:
-					rooms[room_id] = {}
-				rooms[room_id][peer_id] = websocket
+			match data["type"]:
+				case "join":
+					room_id = data["room"]
+					if room_id not in rooms:
+						rooms[room_id] = {}
+					rooms[room_id][peer_id] = websocket
 
-				await websocket.send(json.dumps({
-					"type": "welcome",
-					"id": peer_id,
-					"peers": list(rooms[room_id].keys())
-				}))
+					await websocket.send(json.dumps({
+						"type": "welcome",
+						"id": peer_id,
+						"peers": list(rooms[room_id].keys())
+					}))
 
-			    # Tell everyone else we've joined
-				for id, socket in rooms[room_id].items():
-					if id != peer_id:
-						await socket.send(json.dumps({
-							"type": "new-peer",
-							"id": peer_id
-						}))
+				    # Tell everyone else we've joined
+					for id, socket in rooms[room_id].items():
+						if id != peer_id:
+							await socket.send(json.dumps({
+								"type": "new-peer",
+								"id": peer_id
+							}))
 
-			else:
-				target = data.get("to")
+				case "send":
+					target = data.get("to")
 
-				if target in rooms[room_id]:
-					await rooms[room_id][target].send(message)
+					if target in rooms[room_id]:
+						await rooms[room_id][target].send(message)
+				
+				case _:
+					{}
 	except:
 		pass # If there is an exception, whatever. We are just going to do what we finally must.
 	finally:
@@ -59,8 +64,9 @@ async def handler(websocket):
 					"id": peer_id
 				}))
 
-		# Delete the entry, but does not crash Azure if there is no entry it fails to do a handshake.
+		# Delete the entry, but does not crash Azure if there is no entry if it failed to do a handshake.
 		rooms.get(room_id, {}).pop(peer_id, None)
+
 
 port = int(os.environ.get("PORT", 8765)) # Needed for Azure
 

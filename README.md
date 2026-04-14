@@ -3,14 +3,24 @@ Requires node.js to run.
 
 Current structure:
 ```
-static:						will probably host most of the files
+static:
 	|- index.html:			main page
 	|- main-page.js:		code for main page
+	|- player-api.js		player data interface
 	network:
 		|- network.html:	test datachannel site
 		|- network.js:		main networking api
-webserver.js:				hosts website
+	cards:
+		|- card.js			base card class
+		|- deck.js			base pattern for card games
+		|- cards-demo.html	small game demo
+		|- poker.js			game #1: poker
+	lobby:
+		|- lobby.html		lobby selection screen
+		|- lobby.js			controls dynamic lobby selection
+webserver.js:				debug website
 server.py:					debug datachannel server
+signal_server.js			manages RTC connections + tracks rooms
 ```
 
 Before running the project, navigate to the root directory and run
@@ -20,11 +30,13 @@ npm install
 
 **Please don't upload your node-modules folder! Delete it before adding changes!**
 
-Currently, the main file is `webserver.js`, but this may change.
-You can run the webserver by doing
+To run the project locally, first run the webserver:
 ```
 node webserver.js
 ```
-in your terminal of choice. Default host is at `http://localhost:8080`.
+Default host is at `http://localhost:8080`.
 
-May also require running `server.py` with Python.
+You may also need to host the signaling server:
+```
+node signal_server.js
+```

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang = "en">
+<link rel="stylesheet" href="cards-demo.css">
+
+<head>
+	<title>The Flying Casino</title>
+</head>
+
+<body>
+	<main>
+		<a href="../index.html">← Back</a>
+		<br><br>
+		Select Game:
+		<select id="gameSelect">
+			<option value ="">No Game Selected</option>
+			<option value = "videoPoker">Video Poker</option>
+			<option value = "texasHoldEm">Texas Hold 'Em</option>
+		</select>
+		<button id="selectGameButton">Select Game</button>
+
+		<div id="gameSpace" data-type="none"></div>
+	</main>
+
+	<script type = "module">
+		import { VideoPokerHTMLHandler, TexasHoldEmHTMLHandler, Player } from "./poker.js"
+		import { constructNetworkAPI } from "../network/network.js"
+
+		const gameSelect = document.getElementById("gameSelect")
+		const selectGameButton = document.getElementById("selectGameButton")
+		const gameSpace = document.getElementById("gameSpace")
+		
+		var htmlHandler = null
+		var network = await constructNetworkAPI("wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/")
+		network.onMessage = (message) => {
+			let messageObject = JSON.parse(message.data)
+			switch (messageObject.type) {
+				case "texasHoldEm":
+					htmlHandler.recieveAction(messageObject)
+			}
+		}
+		
+		gameSelect.addEventListener("change", (event) => {
+			htmlHandler = null
+			gameSpace.innerHTML = ""
+			gameSpace.dataset.type = "none"
+
+			switch(gameSelect.value) {
+				case "videoPoker": 
+					gameSpace.dataset.type = "videoPoker"
+					htmlHandler = new VideoPokerHTMLHandler(document, gameSpace)
+					htmlHandler.currentChips.textContent = 100
+
+					// The idea with the htmlHandler is it handles all HTML that the game itself needs.
+					// As for making it actually look pretty, it is entirely up to the caller of htmlHandler.
+					gameSpace.insertBefore(document.createElement("br"), htmlHandler.betInput)
+
+					const betLabel = document.createElement("label")
+					betLabel.innerText = "Current Bet: "
+					betLabel.setAttribute("for", "videoPokerBetInput")
+					gameSpace.insertBefore(betLabel, htmlHandler.betInput)
+
+					break
+				case "texasHoldEm":
+					gameSpace.dataset.Type = "texasHoldEm"
+					var texasHoldEmPlayers = []
+
+					// The first player is ourselves, who should just pass on any incoming objects to our own reciever.
+					texasHoldEmPlayers.append(new Player((object) => htmlHandler.recieveAction(object)))
+
+					for (const peer of Object.values(network.peers)) {
+						// We create a Player which has a .call(object), which is just a .sendObject() with the player's respective PeerId.
+						texasHoldEmPlayers.append(new Player((object) => network.sendObject(object, peer.PeerId)))
+					}
+					htmlHandler = new TexasHoldEmHTMLHandler(document, gameSpace, texasHoldEmPlayers, 0)
+					
+
+					break
+				default: 
+					break
+			}
+		})
+	</script>
+</body>
+
+</html>

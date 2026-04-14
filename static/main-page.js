@@ -1,13 +1,10 @@
-console.log('flying-casino has hit the browser');
+import { initializePlayerData } from "./player-api.js";
 
-const name_input = document.getElementById('name-input');
-name_input.onkeydown = event => {
-	switch (event.code) {
-		case 'Enter':
-			alert('this doesn\'t do anything yet');
-			break;
-	}
-}
+/** @type {HTMLInputElement} */
+const nameInput = document.getElementById('name-input');
+/*nameInput.onchange = e => {
+	initializePlayerData(e.target.value);
+}*/
 
 // ── Custom cursor ──
 const cursor = document.getElementById('cursor');
@@ -95,5 +92,11 @@ function showLoadingOverlay(mode) {
 	overlay.addEventListener('click', () => overlay.remove());
 }
 
-document.getElementById('btn-singleplayer').addEventListener('click', e => { e.preventDefault(); showLoadingOverlay('solo'); });
-document.getElementById('btn-multiplayer').addEventListener('click',  e => { e.preventDefault(); showLoadingOverlay('multi'); });
+document.getElementById('btn-singleplayer').addEventListener('click', () => {
+	initializePlayerData(nameInput.value);
+	showLoadingOverlay('solo');
+});
+document.getElementById('btn-multiplayer').addEventListener('click',  () => {
+	initializePlayerData(nameInput.value);
+	showLoadingOverlay('multi');
+});

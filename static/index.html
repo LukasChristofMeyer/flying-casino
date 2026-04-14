@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-	<script defer src="main-page.js"></script>
+	<script defer type="module" src="main-page.js"></script>
 	<link rel="stylesheet" href="main-page.css">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,12 +63,15 @@
 							<input id="name-input" class="open-sans-custom-font" placeholder="Your name is..."/>
 
 							<div class="btn-row">
-								<a href="#" class="btn btn-solo" id="btn-singleplayer">Single Player</a>
-								<a href="#" class="btn btn-multi" id="btn-multiplayer">Multiplayer</a>
+								<a href="lobby/lobby.html?solo=true" class="btn btn-solo" id="btn-singleplayer">Single Player</a>
+								<a href="lobby/lobby.html" class="btn btn-multi" id="btn-multiplayer">Multiplayer</a>
 							</div>
 
 							<div class="dev-link">
 								<a href="network/network.html" id="network-test">test WebRTC</a>
+							</div>
+							<div class="dev-link">
+								<a href="cards/cards-demo.html" id="network-test">cards demo</a>
 							</div>
 
 						</div>

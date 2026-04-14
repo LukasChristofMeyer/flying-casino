@@ -128,6 +128,7 @@ class NetworkAPI {
 			return
 		}
 		this.#socket.send(JSON.stringify({
+			type: "send",
 			to,
 			from: this.id,
 			...json
@@ -302,7 +303,7 @@ class NetworkAPI {
 */
 export async function constructNetworkAPI(
 	// Defaults to our signaling servers IP, but theoretically could be manual to any server.
-	signalingURL = "flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net",
+	signalingURL = "ws://localhost:8765",
 	roomId = "global"
 ) {
 	const socket = new WebSocket(signalingURL)
@@ -312,8 +313,8 @@ export async function constructNetworkAPI(
 	await new Promise(resolve => socket.onopen = resolve)
 
 	socket.send(JSON.stringify({
-		arriving: true,
-		room: roomId
+		type: "join",
+		room: roomId,
 	}))
 
 	// Same as above, but now we promise we are nabbing the mandatory returning welcome JSON.
