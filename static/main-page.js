@@ -92,7 +92,10 @@ function showLoadingOverlay(mode) {
 	overlay.addEventListener('click', () => overlay.remove());
 }
 
-document.getElementById('btn-singleplayer').addEventListener('click', e => { e.preventDefault(); showLoadingOverlay('solo'); });
+document.getElementById('btn-singleplayer').addEventListener('click', () => {
+	initializePlayerData(nameInput.value);
+	showLoadingOverlay('solo');
+});
 document.getElementById('btn-multiplayer').addEventListener('click',  () => {
 	initializePlayerData(nameInput.value);
 	showLoadingOverlay('multi');
