@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Video Poker – The Flying Casino</title>
+	<style>
+		.currentChips::before { content: "Current Chips: "; }
+		.dealButton::before { content: "Deal"; }
+		li.card[data-label][data-suit]::before { content: attr(data-label) " of " attr(data-suit)"s"; }
+		li.card[data-selected="TRUE"] { color: red; }
+		li.card[data-selected=FALSE] { color: black; }
+		div.gameOutput { display: flex; flex-direction: column-reverse; }
+	</style>
+</head>
+
+<body>
+	<main>
+		<a href="../lobby/lobby.html">← Back to Lobby</a>
+		<br><br>
+		<h2>Video Poker</h2>
+		<div id="gameSpace"></div>
+	</main>
+
+	<script type="module">
+		import { VideoPokerHTMLHandler } from "./poker.js"
+		import { constructNetworkAPI } from "../network/network.js"
+
+		const gameSpace = document.getElementById("gameSpace")
+
+		var network = await constructNetworkAPI("wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/")
+
+		const htmlHandler = new VideoPokerHTMLHandler(document, gameSpace)
+		htmlHandler.currentChips.textContent = 100
+
+		gameSpace.insertBefore(document.createElement("br"), htmlHandler.betInput)
+
+		const betLabel = document.createElement("label")
+		betLabel.innerText = "Current Bet: "
+		betLabel.setAttribute("for", "videoPokerBetInput")
+		gameSpace.insertBefore(betLabel, htmlHandler.betInput)
+	</script>
+</body>
+
+</html>
