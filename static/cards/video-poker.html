@@ -2,42 +2,640 @@
 <html lang="en">
 <head>
 	<title>Video Poker – The Flying Casino</title>
+	<link rel="stylesheet" href="../main-page.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:wght@700;900&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 	<style>
-		.currentChips::before { content: "Current Chips: "; }
-		.dealButton::before { content: "Deal"; }
-		li.card[data-label][data-suit]::before { content: attr(data-label) " of " attr(data-suit)"s"; }
-		li.card[data-selected="TRUE"] { color: red; }
-		li.card[data-selected=FALSE] { color: black; }
-		div.gameOutput { display: flex; flex-direction: column-reverse; }
+		/* ── VIDEO POKER LAYOUT ── */
+		.main { width: 560px; }
+
+		/* ── TITLE ── */
+		.vp-title {
+			font-family: 'Playfair Display', serif;
+			font-size: 30px;
+			font-weight: 900;
+			color: var(--gold-light);
+			letter-spacing: 2px;
+			text-align: center;
+			text-shadow:
+				0 0 18px rgba(200,160,50,0.9),
+				0 0 50px rgba(200,160,50,0.35),
+				2px 3px 0 rgba(0,0,0,0.5);
+			animation: titleGlow 3.5s ease-in-out infinite;
+			margin-bottom: 8px;
+		}
+
+		/* ── PAYOUT TABLE ── */
+		.payout-table {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 5px;
+			margin-bottom: 10px;
+		}
+
+		.payout-item {
+			background: rgba(0,0,0,0.28);
+			border: 1px solid rgba(201,168,76,0.18);
+			border-radius: 3px;
+			padding: 5px 4px;
+			text-align: center;
+			transition: border-color 0.2s, background 0.2s;
+		}
+
+		.payout-item.active {
+			border-color: var(--gold);
+			background: rgba(201,168,76,0.15);
+		}
+
+		.payout-hand {
+			font-family: 'Cinzel', serif;
+			font-size: 7.5px;
+			letter-spacing: 0.5px;
+			text-transform: uppercase;
+			color: rgba(245,240,224,0.42);
+			margin-bottom: 2px;
+		}
+
+		.payout-mult {
+			font-family: 'Playfair Display', serif;
+			font-size: 13px;
+			color: var(--gold-light);
+		}
+
+		/* ── CARD ROW ── */
+		.card-row {
+			display: flex;
+			gap: 8px;
+			justify-content: center;
+			margin-bottom: 6px;
+		}
+
+		/* ── PLAYING CARD ── */
+		.playing-card {
+			width: 84px;
+			height: 116px;
+			background: linear-gradient(145deg, #fafaf5, #ede9da);
+			border-radius: 6px;
+			border: 2px solid rgba(200,200,185,0.8);
+			box-shadow:
+				0 4px 14px rgba(0,0,0,0.55),
+				inset 0 1px 0 rgba(255,255,255,0.9);
+			position: relative;
+			cursor: none;
+			transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+			user-select: none;
+			overflow: hidden;
+		}
+
+		.playing-card.empty {
+			background: rgba(0,0,0,0.18);
+			border: 2px dashed rgba(201,168,76,0.18);
+			box-shadow: none;
+		}
+
+		.playing-card:not(.empty):not(.held):hover {
+			transform: translateY(-4px);
+			box-shadow:
+				0 10px 22px rgba(0,0,0,0.65),
+				0 0 12px rgba(201,168,76,0.25),
+				inset 0 1px 0 rgba(255,255,255,0.9);
+			border-color: rgba(201,168,76,0.6);
+		}
+
+		.playing-card.held {
+			transform: translateY(-10px);
+			border-color: var(--gold);
+			box-shadow:
+				0 14px 28px rgba(0,0,0,0.7),
+				0 0 18px rgba(201,168,76,0.4),
+				inset 0 1px 0 rgba(255,255,255,0.9);
+		}
+
+		/* Corner pip group */
+		.card-corner {
+			position: absolute;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			line-height: 1.1;
+		}
+		.card-corner.tl { top: 5px; left: 7px; }
+		.card-corner.br { bottom: 5px; right: 7px; transform: rotate(180deg); }
+
+		.card-value {
+			font-family: 'Playfair Display', serif;
+			font-size: 16px;
+			font-weight: 900;
+			line-height: 1;
+		}
+		.card-suit-pip { font-size: 11px; line-height: 1; }
+
+		/* Center suit watermark */
+		.card-center {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 40px;
+			opacity: 0.1;
+			pointer-events: none;
+		}
+
+		/* Color by suit */
+		.red-card .card-value,
+		.red-card .card-suit-pip,
+		.red-card .card-center { color: #c22020; }
+
+		.black-card .card-value,
+		.black-card .card-suit-pip,
+		.black-card .card-center { color: #111; }
+
+		/* Hold ribbon */
+		.hold-label {
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			background: linear-gradient(to bottom, rgba(21,85,35,0.92), rgba(10,50,18,0.97));
+			color: var(--gold-light);
+			font-family: 'Cinzel', serif;
+			font-size: 8.5px;
+			letter-spacing: 3px;
+			text-transform: uppercase;
+			text-align: center;
+			padding: 4px 0;
+			display: none;
+		}
+		.playing-card.held .hold-label { display: block; }
+
+		/* Deal-in animation */
+		@keyframes cardDeal {
+			from { opacity: 0; transform: translateY(-24px) scale(0.88); }
+			to   { opacity: 1; transform: translateY(0)    scale(1); }
+		}
+		.playing-card.dealing { animation: cardDeal 0.22s ease-out both; }
+
+		/* ── HINT ── */
+		.card-hint {
+			font-size: 10px;
+			color: rgba(245,240,224,0.28);
+			letter-spacing: 1.5px;
+			font-style: italic;
+			text-align: center;
+			min-height: 14px;
+			margin-bottom: 8px;
+		}
+
+		/* ── CONTROLS ── */
+		.controls-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			justify-content: center;
+			margin-bottom: 8px;
+		}
+
+		.chip-display {
+			font-family: 'Cinzel', serif;
+			font-size: 11px;
+			letter-spacing: 1.5px;
+			color: rgba(245,240,224,0.55);
+			white-space: nowrap;
+		}
+		#chip-count { color: var(--gold-light); font-size: 15px; }
+
+		.bet-input {
+			font-family: 'Open Sans', sans-serif;
+			font-size: 13px;
+			padding: 7px 10px;
+			width: 76px;
+			border-radius: 3px;
+			border: 1.5px solid rgba(200,160,70,0.35);
+			background: rgba(0,0,0,0.4);
+			color: var(--ivory);
+			outline: none;
+			text-align: center;
+			cursor: none;
+			transition: border-color 0.2s, box-shadow 0.2s;
+		}
+		.bet-input:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(200,160,50,0.25); }
+		.bet-input::placeholder { color: rgba(245,240,224,0.25); }
+		.bet-input::-webkit-inner-spin-button,
+		.bet-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+		.bet-input[type=number] { -moz-appearance: textfield; }
+
+		.deal-btn {
+			font-family: 'Cinzel', serif;
+			font-size: 12px;
+			letter-spacing: 3px;
+			text-transform: uppercase;
+			padding: 9px 26px;
+			border-radius: 3px;
+			cursor: none;
+			position: relative;
+			overflow: hidden;
+			transition: transform 0.15s, box-shadow 0.2s;
+			background: linear-gradient(135deg, var(--felt-light), var(--felt-dark));
+			color: var(--ivory);
+			border: 1.5px solid var(--gold);
+			box-shadow: 0 3px 14px rgba(0,0,0,0.5);
+		}
+		.deal-btn::before {
+			content: '';
+			position: absolute;
+			top: -100%; left: -60%;
+			width: 40%; height: 300%;
+			background: rgba(255,255,255,0.12);
+			transform: skewX(-20deg);
+			transition: left 0.4s;
+		}
+		.deal-btn:not(:disabled):hover::before { left: 160%; }
+		.deal-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.6), 0 0 14px rgba(100,200,100,0.15); }
+		.deal-btn:not(:disabled):active { transform: translateY(0); }
+		.deal-btn:disabled { opacity: 0.38; pointer-events: none; }
+
+		/* ── RESULT ── */
+		.result-msg {
+			font-family: 'Playfair Display', serif;
+			font-size: 14px;
+			color: var(--gold-light);
+			text-align: center;
+			min-height: 18px;
+			letter-spacing: 0.5px;
+			text-shadow: 0 0 12px rgba(200,160,50,0.5);
+			margin-bottom: 6px;
+		}
+
+		/* ── BACK LINK ── */
+		.back-link {
+			font-family: 'Open Sans', sans-serif;
+			font-size: 11px;
+			color: rgba(200,160,70,0.35);
+			text-decoration: none;
+			letter-spacing: 2px;
+			transition: color 0.2s;
+			cursor: none;
+			display: block;
+			text-align: center;
+		}
+		.back-link:hover { color: rgba(200,160,70,0.75); }
 	</style>
 </head>
-
 <body>
-	<main>
-		<a href="../lobby/lobby.html">← Back to Lobby</a>
-		<br><br>
-		<h2>Video Poker</h2>
-		<div id="gameSpace"></div>
-	</main>
+
+	<div id="cursor"></div>
+
+	<div id="lamp">
+		<div id="lamp-cord"></div>
+		<div id="lamp-shade"></div>
+	</div>
+
+	<div id="room">
+		<div id="table-wrap">
+			<div id="rail">
+
+				<div class="cue-stick" id="cue-left"><div class="cue-tip"></div></div>
+				<div class="cue-stick" id="cue-right"><div class="cue-tip"></div></div>
+
+				<div class="pocket tl"></div>
+				<div class="pocket tm"></div>
+				<div class="pocket tr"></div>
+				<div class="pocket bl"></div>
+				<div class="pocket bm"></div>
+				<div class="pocket br"></div>
+
+				<div id="felt">
+					<div class="spot"></div>
+					<div class="baulk-line"></div>
+					<div class="baulk-semi"></div>
+					<div id="chalk"></div>
+
+					<div class="ball bcue"></div>
+					<div class="ball b1"></div>
+					<div class="ball b2"></div>
+					<div class="ball b3"></div>
+					<div class="ball b4"></div>
+					<div class="ball b5"></div>
+					<div class="ball b6"></div>
+					<div class="ball b8"></div>
+					<div class="ball b9"></div>
+					<div class="ball b10"></div>
+					<div class="ball b11"></div>
+					<div class="ball b15"></div>
+
+					<div class="main-container">
+						<div class="main">
+
+							<div class="vp-title">Video Poker</div>
+
+							<!-- Payout schedule -->
+							<div class="payout-table">
+								<div class="payout-item" data-hand="Two Pair">
+									<div class="payout-hand">Two Pair</div>
+									<div class="payout-mult">2×</div>
+								</div>
+								<div class="payout-item" data-hand="Three of a Kind">
+									<div class="payout-hand">Three of a Kind</div>
+									<div class="payout-mult">3×</div>
+								</div>
+								<div class="payout-item" data-hand="Straight">
+									<div class="payout-hand">Straight</div>
+									<div class="payout-mult">8×</div>
+								</div>
+								<div class="payout-item" data-hand="Flush">
+									<div class="payout-hand">Flush</div>
+									<div class="payout-mult">8×</div>
+								</div>
+								<div class="payout-item" data-hand="Full House">
+									<div class="payout-hand">Full House</div>
+									<div class="payout-mult">10×</div>
+								</div>
+								<div class="payout-item" data-hand="Four of a Kind">
+									<div class="payout-hand">Four of a Kind</div>
+									<div class="payout-mult">15×</div>
+								</div>
+								<div class="payout-item" data-hand="Straight Flush">
+									<div class="payout-hand">Straight Flush</div>
+									<div class="payout-mult">20×</div>
+								</div>
+								<div class="payout-item" data-hand="Five of a Kind">
+									<div class="payout-hand">Five of a Kind</div>
+									<div class="payout-mult">50×</div>
+								</div>
+							</div>
+
+							<!-- Card area -->
+							<div class="card-row">
+								<div class="playing-card empty" id="card-0"></div>
+								<div class="playing-card empty" id="card-1"></div>
+								<div class="playing-card empty" id="card-2"></div>
+								<div class="playing-card empty" id="card-3"></div>
+								<div class="playing-card empty" id="card-4"></div>
+							</div>
+
+							<div class="card-hint" id="card-hint"></div>
+
+							<!-- Bet controls -->
+							<div class="controls-row">
+								<div class="chip-display">Chips: <span id="chip-count">100</span></div>
+								<input class="bet-input" id="bet-input" type="number" min="1" step="1" placeholder="Bet">
+								<button class="deal-btn" id="deal-btn" disabled>Deal</button>
+							</div>
+
+							<div class="result-msg" id="result-msg"></div>
+
+							<a href="../lobby/lobby.html" class="back-link">← Back to Lobby</a>
+
+						</div>
+					</div>
+
+				</div><!-- /felt -->
+			</div><!-- /rail -->
+		</div><!-- /table-wrap -->
+	</div><!-- /room -->
+
+	<div id="credits">
+		<span id="credits-title">Flying Casino</span>
+		&nbsp;·&nbsp; Free online multiplayer card games &nbsp;·&nbsp; No account required
+		&nbsp;&nbsp;|&nbsp;&nbsp;
+		Lukas Meyer &nbsp;·&nbsp; Lia Smith &nbsp;·&nbsp; Daniel Johnson &nbsp;·&nbsp; Thornton Gray
+	</div>
 
 	<script type="module">
-		import { VideoPokerHTMLHandler } from "./poker.js"
-		import { constructNetworkAPI } from "../network/network.js"
+		import { VideoPoker } from './poker.js'
 
-		const gameSpace = document.getElementById("gameSpace")
+		// ── DISPLAY MAPS ──
+		const LABEL_SHORT = {
+			Ace:"A", Two:"2", Three:"3", Four:"4", Five:"5",
+			Six:"6", Seven:"7", Eight:"8", Nine:"9", Ten:"10",
+			Jack:"J", Queen:"Q", King:"K"
+		}
+		const SUIT_SYMBOL = { Heart:"♥", Diamond:"♦", Club:"♣", Spade:"♠" }
+		const RED_SUITS = new Set(["Heart", "Diamond"])
 
-		var network = await constructNetworkAPI("wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/")
+		// ── PAYOUTS (matching poker.js endGame logic) ──
+		const PAYOUTS = {
+			"Two Pair": 2, "Three of a Kind": 3,
+			"Straight": 8, "Flush": 8, "Full House": 10,
+			"Four of a Kind": 15, "Straight Flush": 20, "Five of a Kind": 50
+		}
 
-		const htmlHandler = new VideoPokerHTMLHandler(document, gameSpace)
-		htmlHandler.currentChips.textContent = 100
+		// ── STATE ──
+		let chips = 100
+		let phase = "bet"   // "bet" | "hold" | "result"
+		const game = new VideoPoker()
 
-		gameSpace.insertBefore(document.createElement("br"), htmlHandler.betInput)
+		// ── DOM ──
+		const chipCount = document.getElementById("chip-count")
+		const betInput  = document.getElementById("bet-input")
+		const dealBtn   = document.getElementById("deal-btn")
+		const cardHint  = document.getElementById("card-hint")
+		const resultMsg = document.getElementById("result-msg")
+		const cardEls   = [0,1,2,3,4].map(i => document.getElementById(`card-${i}`))
 
-		const betLabel = document.createElement("label")
-		betLabel.innerText = "Current Bet: "
-		betLabel.setAttribute("for", "videoPokerBetInput")
-		gameSpace.insertBefore(betLabel, htmlHandler.betInput)
+		// ── CARD RENDERING ──
+		function renderCard(el, card, i, animate) {
+			const isRed = RED_SUITS.has(card.suit)
+			const val = LABEL_SHORT[card.label]
+			const sym = SUIT_SYMBOL[card.suit]
+			el.className = `playing-card ${isRed ? "red-card" : "black-card"}${animate ? " dealing" : ""}`
+			el.style.animationDelay = animate ? `${i * 55}ms` : ""
+			el.dataset.held = "false"
+			el.innerHTML = `
+				<div class="card-corner tl">
+					<div class="card-value">${val}</div>
+					<div class="card-suit-pip">${sym}</div>
+				</div>
+				<div class="card-center">${sym}</div>
+				<div class="card-corner br">
+					<div class="card-value">${val}</div>
+					<div class="card-suit-pip">${sym}</div>
+				</div>
+				<div class="hold-label">Hold</div>
+			`
+		}
+
+		function clearCard(el) {
+			el.className = "playing-card empty"
+			el.style.animationDelay = ""
+			el.innerHTML = ""
+			el.dataset.held = "false"
+		}
+
+		// ── PAYOUT HIGHLIGHT ──
+		function highlightPayout(hand) {
+			document.querySelectorAll(".payout-item").forEach(el =>
+				el.classList.toggle("active", el.dataset.hand === hand))
+		}
+		function clearPayout() {
+			document.querySelectorAll(".payout-item").forEach(el => el.classList.remove("active"))
+		}
+
+		// ── HAND EVALUATION ──
+		function evalHand(hand) {
+			const ORDER = ["Two","Three","Four","Five","Six","Seven","Eight",
+			               "Nine","Ten","Jack","Queen","King","Ace"]
+			const counts = {}
+			let flush = true
+			const firstSuit = hand[0].suit
+			hand.forEach(c => {
+				counts[c.label] = (counts[c.label] || 0) + 1
+				if (c.suit !== firstSuit) flush = false
+			})
+			const sorted = Object.values(counts).sort((a, b) => b - a)
+			const idxs = hand.map(c => ORDER.indexOf(c.label)).sort((a, b) => a - b)
+			const allUnique = new Set(idxs).size === 5
+			const straight = (allUnique && idxs[4] - idxs[0] === 4)
+				|| (idxs[4] === 12 && idxs[0] === 0 && idxs[1] === 1 && idxs[2] === 2 && idxs[3] === 3)
+
+			if (sorted[0] >= 5)                        return "Five of a Kind"
+			if (flush && straight)                     return "Straight Flush"
+			if (sorted[0] >= 4)                        return "Four of a Kind"
+			if (sorted[0] >= 3 && sorted[1] >= 2)     return "Full House"
+			if (flush)                                 return "Flush"
+			if (straight)                              return "Straight"
+			if (sorted[0] >= 3)                        return "Three of a Kind"
+			if (sorted[0] >= 2 && sorted[1] >= 2)     return "Two Pair"
+			if (sorted[0] >= 2)                        return "Pair"
+			return "High Card"
+		}
+
+		// ── BET VALIDATION ──
+		betInput.addEventListener("input", () => {
+			const v = Number(betInput.value)
+			dealBtn.disabled = !(v >= 1 && v <= chips && Number.isInteger(v))
+		})
+
+		// ── CARD HOLD TOGGLE ──
+		cardEls.forEach((el, i) => {
+			el.addEventListener("click", () => {
+				if (phase !== "hold" || el.classList.contains("empty")) return
+				const held = el.dataset.held === "true"
+				el.dataset.held = String(!held)
+				el.classList.toggle("held", !held)
+			})
+		})
+
+		// ── MAIN BUTTON ──
+		dealBtn.addEventListener("click", () => {
+			if      (phase === "bet")    startDeal()
+			else if (phase === "hold")   draw()
+			else if (phase === "result") newHand()
+		})
+
+		function startDeal() {
+			const bet = Number(betInput.value)
+			chips -= bet
+			chipCount.textContent = chips
+
+			clearPayout()
+			resultMsg.textContent = ""
+			cardHint.textContent = "Click cards to hold, then Draw"
+
+			game.reset()
+			game.deal()
+			for (let i = 0; i < 5; i++) renderCard(cardEls[i], game.hand[i], i, true)
+
+			phase = "hold"
+			betInput.disabled = true
+			dealBtn.textContent = "Draw"
+			dealBtn.disabled = false
+		}
+
+		function draw() {
+			for (let i = 0; i < 5; i++) {
+				if (cardEls[i].dataset.held !== "true") {
+					game.discard(i)
+					renderCard(cardEls[i], game.hand[i], i, true)
+				}
+			}
+
+			cardHint.textContent = ""
+			const hand = evalHand(game.hand)
+			highlightPayout(hand)
+
+			const bet = Number(betInput.value)
+			if (PAYOUTS[hand]) {
+				const win = bet * PAYOUTS[hand]
+				chips += win
+				chipCount.textContent = chips
+				resultMsg.textContent = `${hand}! You win ${win} chips.`
+			} else {
+				resultMsg.textContent = `${hand} — no payout.`
+			}
+
+			phase = "result"
+			dealBtn.textContent = "New Hand"
+			dealBtn.disabled = chips <= 0
+
+			if (chips <= 0) {
+				resultMsg.textContent += " No chips remaining."
+				betInput.disabled = true
+			}
+		}
+
+		function newHand() {
+			phase = "bet"
+			cardEls.forEach(clearCard)
+			clearPayout()
+			resultMsg.textContent = ""
+			cardHint.textContent = ""
+			betInput.disabled = false
+			betInput.value = ""
+			dealBtn.textContent = "Deal"
+			dealBtn.disabled = true
+		}
+
+		// ── CUSTOM CURSOR ──
+		const cursor = document.getElementById("cursor")
+		document.addEventListener("mousemove", e => {
+			cursor.style.left = e.clientX + "px"
+			cursor.style.top  = e.clientY + "px"
+		})
+		const hoverSel = ".playing-card:not(.empty), .deal-btn:not(:disabled), .bet-input, .back-link, .ball"
+		document.addEventListener("mouseover", e => {
+			if (e.target.matches(hoverSel) || e.target.closest(hoverSel)) {
+				cursor.style.width = "16px"
+				cursor.style.height = "16px"
+				cursor.style.background = "var(--gold)"
+			}
+		})
+		document.addEventListener("mouseout", e => {
+			if (e.target.matches(hoverSel) || e.target.closest(hoverSel)) {
+				cursor.style.width = "8px"
+				cursor.style.height = "8px"
+				cursor.style.background = "var(--white-ball)"
+			}
+		})
+
+		// ── FELT RIPPLE ──
+		const felt = document.getElementById("felt")
+		felt.addEventListener("click", e => {
+			if (e.target.closest(".playing-card, .deal-btn, .bet-input, .back-link")) return
+			const rect = felt.getBoundingClientRect()
+			const r = document.createElement("div")
+			r.style.cssText = `
+				position: absolute;
+				left: ${e.clientX - rect.left}px;
+				top: ${e.clientY - rect.top}px;
+				width: 4px; height: 4px;
+				border: 2px solid rgba(255,255,255,0.4);
+				border-radius: 50%;
+				pointer-events: none;
+				animation: rippleOut 0.65s ease-out forwards;
+				transform: translate(-50%, -50%);
+			`
+			felt.appendChild(r)
+			setTimeout(() => r.remove(), 750)
+		})
+
+		// ── BALL JIGGLE ──
+		document.querySelectorAll(".ball").forEach(b => {
+			b.addEventListener("mouseenter", () => b.style.transform = "scale(1.18)")
+			b.addEventListener("mouseleave", () => b.style.transform = "")
+		})
 	</script>
 </body>
-
 </html>
