@@ -120,7 +120,7 @@ export class Poker extends Deck {
 
 
 
-class VideoPoker extends Poker {
+export class VideoPoker extends Poker {
 	constructor() {
 		super(5)
 	}
