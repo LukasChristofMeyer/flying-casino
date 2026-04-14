@@ -1,0 +1,274 @@
+/* Lobby-specific overrides and additions on top of main-page.css */
+
+/* ── LAYOUT — constrain main content width for lobby ── */
+.main-container {
+	z-index: 20;
+}
+
+.main {
+	width: 460px;
+}
+
+.hidden { display: none !important; }
+
+/* ── SHARED: title and subtitle ── */
+.lobby-title {
+	font-family: 'Playfair Display', serif;
+	font-size: 34px;
+	font-weight: 900;
+	color: var(--gold-light);
+	letter-spacing: 2px;
+	line-height: 1;
+	text-align: center;
+	text-shadow:
+		0 0 18px rgba(200,160,50,0.9),
+		0 0 50px rgba(200,160,50,0.35),
+		2px 3px 0 rgba(0,0,0,0.5);
+	animation: titleGlow 3.5s ease-in-out infinite;
+	margin-bottom: 6px;
+}
+
+.lobby-title-sm {
+	font-size: 24px;
+	margin-bottom: 10px;
+	text-align: left;
+}
+
+.lobby-subtitle {
+	font-size: 12px;
+	color: rgba(210,210,200,0.5);
+	letter-spacing: 2px;
+	font-style: italic;
+	text-align: center;
+	margin-bottom: 20px;
+}
+
+/* ── BACK LINK ── */
+.back-link {
+	font-family: 'Open Sans', sans-serif;
+	font-size: 11px;
+	color: rgba(200,160,70,0.45);
+	text-decoration: none;
+	letter-spacing: 2px;
+	transition: color 0.2s;
+	cursor: none;
+	background: none;
+	border: none;
+	padding: 0;
+}
+.back-link:hover { color: rgba(200,160,70,0.85); }
+
+
+/* ── VIEW 1: GAME CARDS ── */
+#view-games {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.game-cards {
+	display: flex;
+	gap: 12px;
+	margin-bottom: 18px;
+}
+
+.game-card {
+	width: 138px;
+	background: rgba(0,0,0,0.45);
+	border: 1px solid rgba(201,168,76,0.28);
+	border-radius: 4px;
+	padding: 14px 12px;
+	cursor: none;
+	text-align: center;
+	transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+	user-select: none;
+}
+
+.game-card:hover {
+	border-color: rgba(201,168,76,0.65);
+	background: rgba(0,0,0,0.6);
+	box-shadow: 0 0 14px rgba(201,168,76,0.12);
+}
+
+.game-card.coming-soon {
+	opacity: 0.4;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+.card-suit {
+	font-size: 22px;
+	color: var(--gold);
+	margin-bottom: 8px;
+	text-shadow: 0 0 8px rgba(201,168,76,0.5);
+}
+
+.card-name {
+	font-family: 'Cinzel', serif;
+	font-size: 10px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--ivory);
+	margin-bottom: 8px;
+}
+
+.card-desc {
+	font-size: 11px;
+	color: rgba(245,240,224,0.45);
+	line-height: 1.4;
+}
+
+
+/* ── VIEW 2: ROOM LIST ── */
+#view-rooms {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	width: 460px;
+}
+
+.room-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.player-tag {
+	font-size: 11px;
+	color: rgba(245,240,224,0.35);
+	letter-spacing: 1.5px;
+}
+
+/* Create row */
+.create-row {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 14px;
+}
+
+.create-row input {
+	flex: 1;
+	background: rgba(0,0,0,0.4);
+	border: 1.5px solid rgba(200,160,70,0.3);
+	border-radius: 3px;
+	color: var(--ivory);
+	padding: 8px 14px;
+	font-family: 'Open Sans', sans-serif;
+	font-size: 13px;
+	outline: none;
+	letter-spacing: 0.5px;
+	transition: border-color 0.2s;
+	cursor: none;
+}
+
+.create-row input::placeholder { color: rgba(245,240,224,0.25); }
+.create-row input:focus { border-color: var(--gold); }
+
+.create-row button {
+	background: linear-gradient(135deg, var(--felt-light), var(--felt-dark));
+	border: 1.5px solid var(--gold);
+	border-radius: 3px;
+	color: var(--ivory);
+	font-family: 'Cinzel', serif;
+	font-size: 10px;
+	letter-spacing: 2px;
+	padding: 8px 16px;
+	cursor: none;
+	white-space: nowrap;
+	transition: box-shadow 0.2s;
+}
+
+.create-row button:hover {
+	box-shadow: 0 0 12px rgba(200,160,50,0.3);
+}
+
+/* Room list */
+.room-list-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.open-label {
+	font-family: 'Cinzel', serif;
+	font-size: 9px;
+	letter-spacing: 3px;
+	text-transform: uppercase;
+	color: rgba(201,168,76,0.6);
+}
+
+.open-count {
+	font-size: 11px;
+	color: rgba(245,240,224,0.3);
+}
+
+.room-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: 130px;
+	overflow-y: auto;
+}
+
+.room-list::-webkit-scrollbar { width: 3px; }
+.room-list::-webkit-scrollbar-track { background: transparent; }
+.room-list::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+
+.room-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 9px 14px;
+	background: rgba(0,0,0,0.35);
+	border: 1px solid rgba(201,168,76,0.2);
+	border-radius: 3px;
+	transition: border-color 0.15s;
+}
+
+.room-card:hover { border-color: rgba(201,168,76,0.5); }
+
+.room-card-name {
+	font-family: 'Playfair Display', serif;
+	font-size: 14px;
+	color: var(--ivory);
+}
+
+.room-card-meta {
+	font-size: 10px;
+	color: rgba(245,240,224,0.35);
+	margin-top: 2px;
+	letter-spacing: 0.3px;
+}
+
+.btn-join {
+	flex-shrink: 0;
+	padding: 5px 14px;
+	background: transparent;
+	border: 1px solid var(--gold);
+	border-radius: 2px;
+	color: var(--gold);
+	font-family: 'Cinzel', serif;
+	font-size: 9px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition: background 0.15s, color 0.15s;
+	cursor: none;
+	white-space: nowrap;
+}
+
+.btn-join:hover {
+	background: var(--gold);
+	color: #080808;
+}
+
+.room-empty {
+	font-size: 11px;
+	color: rgba(245,240,224,0.25);
+	font-style: italic;
+	text-align: center;
+	padding: 20px 0;
+}
