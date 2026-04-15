@@ -1,60 +1,104 @@
+export {getValue, hit, stay, blackjackDeck, blackjackHands, values}
 import { Deck } from "./deck.js";
 
-BlackjackDeck = new Deck(2);                                    // create blackjack deck with handsize 2
+export class BlackjackHTMLHandler {                             // handles html for the blackjack game
+    hand;                                                       // html elements
+    hitButton;
+    stayButton;
+    players;
+    playersSelfIndex;
+    isHost;
 
-blackjackHands = [];                                            // array containing the players hands
+    BlackjackDeck = new Deck(2);                                // game elements
+    blackjackHands = [];
+    values = [];
+    bust = false;
+    nextTurn = false;
 
-values = [];                                                    // value of each players hand
+    blackjackHTML = '<ul class = "hand" id ="blackjackHand"></ul> <button class = "hitButton"></button> <button class = "stayButton"></button>'
 
-bust = false;                                                   // determines if the player has busted
+    constructor (document,players,playersSelfIndex,isHost) {
 
-nextTurn = false;                                               // determines if the player is done with their turn
+        this.document = document;
+        this.hand = document.getElementById("blackjackHand");
+        this.hitButton = document.getElementById("hitButton");
+        this.stayButton = document.getElementById("stayButton");
+        this.players = players;
+        this.playersSelfIndex = playersSelfIndex;
+        this.isHost = isHost;
 
-hitButton = document.getElementById("hitButton");               // references for buttons in html
-stayButton = document.getElementById("stayButton");
-
-function getValue(i) {                                          // function for getting initial value after deal
-    for (let j = 0; j < blackjackHands[i].length(); j++) {
-        values[i] = values[i] + blackjackHands[i][j].value;
-    }
-}
-
-function hit(i) {                                               // function for getting new card
-    newCard = blackjackDeck.cards.pop()                         // store card
-    blackjackHands[i].push(newCard);                            // add card to hand
-    values [i] = values [i] + newCard.value;                    // add card to value
-    if (values [i] > 21) {
-        bust = true;                                            // if the player's value is greater than 21, the player has busted
-        values [i] = 0;
-    }
-}
-
-function stay() {                                               // function for player to say their turn is over
-    nextTurn = true;                                            // set next turn to true
-}
-
-function checkWinner() {                                        // function for checking the winner
-    winner = 0;                                                 // winner is defaulted to the first player
-    highestValue = values[0];                                   // highest value is defaulted to the first value
-    for (let i = 1; i < playerNumber; i++){
-        if (values[i]>highestValue){
-            winner = i;                                         // compare highest value to each value and set new highest value
-            highestValue = value[i];
+        for (var i = 0; i < this.players.length; i++) {
+			const player = this.document.createElement("li")
+			player.classList.add("player")
+			player.dataset.state = "none"
+			player.dataset.index = i
         }
     }
-    return winner;                                              // return index of winner
+
+    renderHand(hand) {                                          // render dealt hands to html
+		for (let i = 0; i < hand.length; i++) {
+			const card = this.document.createElement("li");     // create and populate card into players hand
+			card.classList.add("card");
+			card.dataset.label = hand[i].label;
+			card.dataset.suit = hand[i].suit;
+			card.dataset.index = i;
+
+			this.hand.appendChild(card);
+		}
+	}
+
+    getValue(i) {                                               // function for getting initial value after deal
+        for (let j = 0; j < this.blackjackHands[i].length; j++) {
+            this.values[i] = this.values[i] + this.blackjackHands[i][j].value;
+        }
+    }
+
+    hit(i) {                                                    // function for getting new card
+        newCard = this.blackjackDeck.cards.pop()                // store card
+        this.blackjackHands[i].push(newCard);                   // add card to hand
+        this.values [i] = this.values [i] + newCard.value;      // add card to value
+        if (this.values [i] > 21) {
+            this.bust = true;                                   // if the player's value is greater than 21, the player has busted
+            this.values [i] = 0;
+        }
+    }
+
+    stay() {                                                    // function for player to say their turn is over
+        this.nextTurn = true;
+    }
+
+    checkWinner() {                                             // function for checking the winner
+        winner = 0;                                             // winner is defaulted to the first player
+        highestValue = this.values[0];                          // highest value is defaulted to the first value
+        for (let i = 1; i < this.players.length; i++){
+            if (values[i]>highestValue){
+                winner = i;                                     // compare highest value to each value and set new highest value
+                highestValue = value[i];
+            }
+        }
+        return winner;                                          // return index of winner
+    }
+
+    play() {                                                    // function for playing the game 
+        this.BlackjackDeck.deal(this.players.length, this.blackjackHands);// deal
+        this.renderHand(this.hand)
+        for (let i = 0; i < this.players.length; i++) {         // each player takes their turn
+            this.getValue(i);                                   // get value of hand
+            while (bust == false && nextTurn == false){         // player turn  
+                this.hitButton.addEventListener("click", this.hit(i));
+                this.stayButton.addEventListener("click",this.stay());
+            }
+            this.bust = false;
+            this.nextTurn = false;
+        }
+        this.checkWinner();                                           // check the winner after every player has taken their turn
+    }
+
 }
 
-function play(playerNumber) {                                   // function for playing the game 
-    BlackjackDeck.deal(playerNumber, blackjackHands);           // deal
-    for (let i = 0; i < playerNumber; i++) {                    // each player takes their turn
-        getValue(i);                                            // get value of hand
-        while (bust == false && nextTurn == false){             // loop
-        hitButton.addEventListener("click", hit(i));            // hit or
-        stayButton.addEventListener("click",stay());            // stay
-        }
-        bust = false;                                           // reset bust
-        nextTurn = false;                                       // and next turn
-    }
-    checkWinner();                                              // check the winner after every player takes their turn
+export class Player {
+	
+	constructor(sendFunction) {
+		this.send = sendFunction
+	}
 }
