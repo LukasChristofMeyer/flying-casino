@@ -34,17 +34,27 @@ function escapeHtml(str) {
 // ── View switching ──
 let currentGame = null;
 
+function showView(id) {
+	['view-games', 'view-mode', 'view-rooms'].forEach(v =>
+		document.getElementById(v).classList.toggle('hidden', v !== id)
+	);
+}
+
 function showGames() {
-	document.getElementById('view-games').classList.remove('hidden');
-	document.getElementById('view-rooms').classList.add('hidden');
+	showView('view-games');
+}
+
+function showMode(game) {
+	currentGame = game;
+	document.getElementById('mode-view-title').textContent = GAME_LABELS[game] || game;
+	showView('view-mode');
 }
 
 function showRooms(game) {
 	currentGame = game;
-	document.getElementById('view-games').classList.add('hidden');
-	document.getElementById('view-rooms').classList.remove('hidden');
 	document.getElementById('room-view-title').textContent = GAME_LABELS[game] || game;
 	document.getElementById('player-name').textContent = player.getName();
+	showView('view-rooms');
 	renderRooms();
 }
 
@@ -91,25 +101,21 @@ document.getElementById('create-btn').addEventListener('click', () => {
 	nameInput.value = '';
 });
 
-// ── Solo mode (single player) ──
-const isSolo = new URLSearchParams(location.search).get('solo') === 'true';
-
-if (isSolo) {
-	document.querySelector('.lobby-subtitle').textContent = 'Pick a game to play.';
-}
-
-// ── Game card clicks ──
+// ── Game card clicks → go to mode select ──
 document.querySelectorAll('.game-card:not(.coming-soon)').forEach(card => {
-	card.addEventListener('click', () => {
-		const game = card.dataset.game;
-		if (isSolo) {
-			location.href = `${GAME_PAGES[game]}?solo=true`;
-		} else {
-			showRooms(game);
-		}
-	});
+	card.addEventListener('click', () => showMode(card.dataset.game));
 });
 
+// ── Mode select buttons ──
+document.getElementById('btn-solo').addEventListener('click', () => {
+	location.href = `${GAME_PAGES[currentGame]}?solo=true`;
+});
+
+document.getElementById('btn-multi').addEventListener('click', () => {
+	showRooms(currentGame);
+});
+
+document.getElementById('btn-back-mode').addEventListener('click', showGames);
 document.getElementById('btn-back-games').addEventListener('click', showGames);
 
 // ── Custom cursor ──
@@ -119,7 +125,7 @@ document.addEventListener('mousemove', e => {
 	cursor.style.top  = e.clientY + 'px';
 });
 
-const hoverTargets = '.game-card, .back-link, .btn-join, .create-row button, #create-btn, .create-row input';
+const hoverTargets = '.game-card, .mode-card, .back-link, .btn-join, .create-row button, #create-btn, .create-row input';
 document.querySelectorAll(hoverTargets).forEach(el => {
 	el.addEventListener('mouseenter', () => {
 		cursor.style.width      = '16px';
