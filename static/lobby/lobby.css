@@ -119,7 +119,60 @@
 }
 
 
-/* ── VIEW 2: ROOM LIST ── */
+/* ── VIEW 2: MODE SELECT ── */
+#view-mode {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.mode-cards {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 18px;
+}
+
+.mode-card {
+	width: 160px;
+	background: rgba(0,0,0,0.45);
+	border: 1px solid rgba(201,168,76,0.28);
+	border-radius: 4px;
+	padding: 20px 14px;
+	cursor: none;
+	text-align: center;
+	transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+	user-select: none;
+}
+
+.mode-card:hover {
+	border-color: rgba(201,168,76,0.65);
+	background: rgba(0,0,0,0.6);
+	box-shadow: 0 0 14px rgba(201,168,76,0.12);
+}
+
+.mode-icon {
+	font-size: 22px;
+	color: var(--gold);
+	margin-bottom: 8px;
+	text-shadow: 0 0 8px rgba(201,168,76,0.5);
+}
+
+.mode-name {
+	font-family: 'Cinzel', serif;
+	font-size: 10px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--ivory);
+	margin-bottom: 8px;
+}
+
+.mode-desc {
+	font-size: 11px;
+	color: rgba(245,240,224,0.45);
+	line-height: 1.4;
+}
+
+/* ── VIEW 3: ROOM LIST ── */
 #view-rooms {
 	display: flex;
 	flex-direction: column;
