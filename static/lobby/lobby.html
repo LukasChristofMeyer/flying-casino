@@ -80,7 +80,26 @@
 								<a href="../index.html" class="back-link">← Back</a>
 							</div>
 
-							<!-- View 2: Room List -->
+							<!-- View 2: Solo or Multiplayer -->
+							<div id="view-mode" class="hidden">
+								<div class="lobby-title lobby-title-sm" id="mode-view-title"></div>
+								<div class="lobby-subtitle">How do you want to play?</div>
+								<div class="mode-cards">
+									<div class="mode-card" id="btn-solo">
+										<div class="mode-icon">♟</div>
+										<div class="mode-name">Solo</div>
+										<div class="mode-desc">Play against the computer</div>
+									</div>
+									<div class="mode-card" id="btn-multi">
+										<div class="mode-icon">♟♟</div>
+										<div class="mode-name">Multiplayer</div>
+										<div class="mode-desc">Join or create a table</div>
+									</div>
+								</div>
+								<button id="btn-back-mode" class="back-link">← Games</button>
+							</div>
+
+							<!-- View 3: Room List -->
 							<div id="view-rooms" class="hidden">
 								<div class="room-header">
 									<button id="btn-back-games" class="back-link">← Games</button>
