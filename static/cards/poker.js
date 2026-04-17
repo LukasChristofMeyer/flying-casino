@@ -454,8 +454,15 @@ class TexasHoldEm extends Poker {
 		this.#pot = new Pot(this.#players, currentBet)
 	}
 
+	
+	#sendToAllPlayers(object) {
+		this.#players.forEach(player => {
+			player.send(object)
+		});
+	}
+
 	cardReveals() {
-		for (let i; i < this.#players.length; i++) {
+		for (let i = 0; i < this.#players.length; i++) {
 			this.#players.forEach(player => {
 				player.send({
 					type: "texasHoldEm",
@@ -476,7 +483,7 @@ class TexasHoldEm extends Poker {
 		}
 	}
 
-	decideWinner() {
+	endGame() {
 		var winnerIndexes = []
 		winnerIndexes[0] = this.#players[0]
 		for (let i = 0; i < this.#players.length; i++) {
@@ -487,7 +494,8 @@ class TexasHoldEm extends Poker {
 			if (pokerHandValueTable[pokerHandType(fullHand)] > pokerHandValueTable[pokerHandType(winnerIndexes[0].hand)]) {
 				winnerIndexes = []
 				winnerIndexes[0] = this.#players[i]
-			} 
+			}
+
 			else if (pokerHandValueTable[pokerHandType(fullHand)] == pokerHandValueTable[pokerHandType(winnerIndexes[0].hand)]) {
 				if (handScore(fullHand) > handScore(winnerIndexes[0].hand)) {
 					winnerIndexes = []
@@ -498,6 +506,14 @@ class TexasHoldEm extends Poker {
 			}
 		}
 		this.#pot.reward(winnerIndexes)
+
+		this.cardReveals()
+
+		this.#sendToAllPlayers({
+			type: "texasHoldEm",
+			act: "revealedWinners",
+			winners: winnerIndexes
+		})
 	}
 
 	ante(smallBlindIndex, bet = this.#currentBet/2) {
@@ -543,52 +559,48 @@ class TexasHoldEm extends Poker {
 		this.communityCards.push(this.cards.pop())
 		this.communityCards.push(this.cards.pop())
 
-		for (var i = 0; i < this.#players.length; i++) {
-			this.#players[i].send({
-				type: "texasHoldEm",
-				action: "flop",
-				flopped: [
-					{
-						label: this.communityCards[0].label,
-						suit: this.communityCards[0].suit
-					}, {
-						label: this.communityCards[1].label,
-						suit: this.communityCards[1].suit
-					}, {
-						label: this.communityCards[2].label,
-						suit: this.communityCards[2].suit
-					}
-				]
-			})
-		}
+		this.#sendToAllPlayers({
+			type: "texasHoldEm",
+			action: "flop",
+			flopped: [
+				{
+					label: this.communityCards[0].label,
+					suit: this.communityCards[0].suit
+				}, {
+					label: this.communityCards[1].label,
+					suit: this.communityCards[1].suit
+				}, {
+					label: this.communityCards[2].label,
+					suit: this.communityCards[2].suit
+				}
+			]
+		})
 	}
 
 	#turn() {
 		this.communityCards.push(this.cards.pop())
-		for (var i = 0; i < this.#players.length; i++) {
-			this.#players[i].send({
-				type: "texasHoldEm",
-				action: "turn",
-				card: {
-					label: this.communityCards[3].label,
-					suit: this.communityCards[3].suit
-				}
-			})
-		}
+
+		this.#sendToAllPlayers({
+			type: "texasHoldEm",
+			action: "turn",
+			card: {
+				label: this.communityCards[3].label,
+				suit: this.communityCards[3].suit
+			}
+		})
 	}
 
 	#river() {
 		this.communityCards.push(this.cards.pop())
-		for (var i = 0; i < this.#players.length; i++) {
-			this.#players[i].send({
-				type: "texasHoldEm",
-				action: "river",
-				card: {
-					label: this.communityCards[4].label,
-					suit: this.communityCards[4].suit
-				}
-			})
-		}
+
+		this.#sendToAllPlayers({
+			type: "texasHoldEm",
+			action: "river",
+			card: {
+				label: this.communityCards[4].label,
+				suit: this.communityCards[4].suit
+			}
+		})
 	}
 	
 	#nextTurn() {
@@ -621,7 +633,7 @@ class TexasHoldEm extends Poker {
 							this.#round = 3
 							break
 						case 3:
-							this.decideWinner()
+							this.endGame()
 							break
 					}
 				}
@@ -630,10 +642,11 @@ class TexasHoldEm extends Poker {
 			// If the player who would play has folded, they do not have a turn, so its the next persons!
 		} while (this.#players[this.#toPlayIndex].state != "folded")
 
-		// Tell the person to play that it is their turn!
-		this.#players[this.#toPlayIndex].send({
+		// Tell everyone whose turn it is!
+		this.#sendToAllPlayers({
 			type: "texasHoldEm",
-			action: "givenTurn"
+			action: "nextTurn",
+			toPlay: this.#toPlayIndex
 		})
 	}
 
@@ -645,6 +658,13 @@ class TexasHoldEm extends Poker {
 				this.#pot.raise(player, raise)
 				player.state = "raise"
 				this.#raised = true
+				
+				this.#sendToAllPlayers({
+					type: "texasHoldEm",
+					action: "playerRaised",
+					raiseAmount: raise,
+					playerIndex: playerIndex
+				})
 
 				this.#nextTurn()
 			}
@@ -658,6 +678,13 @@ class TexasHoldEm extends Poker {
 				this.#pot.call(player)
 				player.state = "call"
 
+
+				this.#sendToAllPlayers({
+					type: "texasHoldEm",
+					action: "playerCalled",
+					playerIndex: playerIndex
+				})
+
 				this.#nextTurn()
 			}
 		}
@@ -666,6 +693,12 @@ class TexasHoldEm extends Poker {
 	playerFold(playerIndex) {
 		if (playerIndex == this.#toPlayIndex) {
 			this.#players[playerIndex] = "folded"
+
+			this.#sendToAllPlayers({
+				type: "texasHoldEm",
+				action: "playerFolded",
+				playerIndex: playerIndex
+			})
 
 			this.#nextTurn()
 		}
