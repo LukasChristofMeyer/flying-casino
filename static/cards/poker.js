@@ -551,7 +551,7 @@ export class TexasHoldEm extends Poker {
 		this.#pot.bet(smallBlindIndex == this.#players.length-1 ? this.#players[0] : this.#players[smallBlindIndex + 1], bet*2)
 		
 		// Person next to the big blind, who will be the person to start playing in the game
-		this.#firstToPlayIndex = (smallBlindIndex == this.#players.length-2 ? 0 : smallBlindIndex+2)
+		this.#firstToPlayIndex = (smallBlindIndex == this.#players.length-2 ? 0 : smallBlindIndex+2 % this.#players.length)
 		this.#toPlayIndex = this.#firstToPlayIndex
 
 
