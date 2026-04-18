@@ -1,0 +1,28 @@
+.currentChips::before {
+	content: "current chips: ";
+}
+
+.raise::before {
+	content: "raise";
+}
+
+.call::before {
+	content: "call";
+}
+
+.fold::before {
+	content: "fold";
+}
+
+li.card[data-label][data-suit]::before {
+	content: attr(data-label) " of " attr(data-suit)"s";
+}
+
+li.player[data-index][data-name][data-state][data-chips-remaining][data-chips-bet]::before {
+	content: "player " attr(data-index) " " attr(data-name) "'s state is " attr(data-state) " and has bet " attr(data-chips-bet) " out of " attr(data-chips-remaining);
+}
+
+div.gameOutput {
+	display: flex;
+	flex-direction: column-reverse;
+}

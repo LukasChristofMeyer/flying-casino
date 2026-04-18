@@ -68,15 +68,16 @@ function pokerHandType(hand) {
 }
 
 const pokerHandValueTable = {
-	"Pair" : 0,
-	"Two Pair" : 1,
-	"Three of a Kind": 2,
-	"Straight" : 3,
-	"Flush" : 4,
-	"Full House" : 5,
-	"Four of a Kind" : 6,
-	"Straight Flush" : 7,
-	"Five of a Kind" : 8
+	"High Card" : 0,
+	"Pair" : 1,
+	"Two Pair" : 2,
+	"Three of a Kind": 3,
+	"Straight" : 4,
+	"Flush" : 5,
+	"Full House" : 6,
+	"Four of a Kind" : 7,
+	"Straight Flush" : 8,
+	"Five of a Kind" : 9
 }
 
 function handScore(hand) {
@@ -291,9 +292,9 @@ class Pot {
 	#allInLimit
 	#currentBet // The amount needed to be bet, as per players.chipsBet. Needed, so that calling multiple times does not overcharge you.
 	#players
-	#sidePot
+	#sidePot = {}
 
-	constructor(players, currentBet = 1) {
+	constructor(players, currentBet = 10) {
 		this.#currentBet = currentBet
 		this.#prize = 0
 
@@ -360,13 +361,13 @@ class Pot {
 
 	raise(player, raise) {
 		let newBet = raise + this.#currentBet
-		this.bet(player, newBet)
 		this.#currentBet = newBet
+		this.call(player)
 	}
 
 	// To call is to bet only up to that which is the currentBet.
 	call(player) {
-		callBet = this.#currentBet - player.chipsBet
+		let callBet = this.#currentBet - player.chipsBet
 		if (callBet < 0) {
 			this.bet(player, 0)
 		} else {
@@ -422,7 +423,7 @@ class Pot {
 
 
 // If you want a reference, I recommend: https://www.youtube.com/watch?v=DUzoLS4tnUM
-class TexasHoldEm extends Poker {
+export class TexasHoldEm extends Poker {
 	communityCards
 
 	// Note that TexasHoldEm by definition needs betting. Otherwise, it is just "who draws the better hand."
@@ -435,15 +436,23 @@ class TexasHoldEm extends Poker {
 	#round = 0 // 0 = flop, 1 = turn, 2 = river, 3 = game over!
 
 	constructor (
-		/* 	Assumes an array of player objects with:
+		/* 	Assumes an array of objects with:
 			.chipsRemaining, which is a mutable value of chips to lose or grow larger through bets
 			.chipsBet, which is a mutable value of chips that they have dedicated in the current game
-			.send, which is a function that sends an object to other players,
-			.state, which describes its state either "none" "called" "folded" or "raised"
-			and .hand
+			and a .send() function, equivalent to a NetworkingAPI.sendObject() but passed with the ID for the player
+
+			.send() is of particular importance, as the caller of this needs its own .send() to get objects without networking,
+			This is since certain .send() calls tell everyone what to render, and that includes the user of this object!
+			It is also notable in that it handles all game state interfacing. 
+			If you have AI, you'll likely have a player with a unique .send()
+
+			Each will eventually be assigned a .state variable, either "none" "called" "folded" or "raised"
+			And a .hand variable.
+
+			Therefore, make this array per construction of texasHoldEm. It is transitory in design.
 		*/
 		players, 
-		currentBet = 1,
+		currentBet = 10,
 	) {
 		super(2)
 
@@ -461,58 +470,77 @@ class TexasHoldEm extends Poker {
 		});
 	}
 
+	receiveAction(actionObject) {
+		switch(actionObject.action) {
+			case "raise":
+				this.playerRaise(actionObject.playerIndex, actionObject.raise)
+				break
+			case "call":
+				this.playerCall(actionObject.playerIndex)
+				break
+			case "fold":
+				this.playerFold(actionObject.playerIndex)
+				break
+		}
+	}
+
+
+	getGameState() {
+		return {
+			type: "texasHoldEm",
+			action: "gameState",
+			currentBet: this.#currentBet,
+			players: this.#players,
+			toPlay: this.#toPlayIndex,
+			communityCards: this.communityCards
+		}
+	}
+
 	cardReveals() {
 		for (let i = 0; i < this.#players.length; i++) {
-			this.#players.forEach(player => {
-				player.send({
-					type: "texasHoldEm",
-					act: "showHand",
-					owner: i,
-					hand: [
-						{
-							label: this.#players[i].hand[0].label,
-							suit: this.#players[i].hand[0].suit
-						}, {
-							label: this.#players[i].hand[1].label,
-							suit: this.#players[i].hand[1].suit
-						},
-					],
-					handType: pokerHandType([...this.#players[i].hand, ...this.communityCards])
-				})
+			this.#sendToAllPlayers({
+				type: "texasHoldEm",
+				action: "showHand",
+				ownerIndex: i,
+				player: this.#players[i],
+				handType: pokerHandType([...this.#players[i].hand, ...this.communityCards])
 			})
 		}
 	}
 
 	endGame() {
-		var winnerIndexes = []
-		winnerIndexes[0] = this.#players[0]
+		var winners = []
+		winners[0]= {hand: false}
+
 		for (let i = 0; i < this.#players.length; i++) {
-			if (this.#players.state == "folded") {continue}
+			if (this.#players[i].state == "folded") {continue}
+			if (!winners[0].hand) {winners[0] = this.#players[i]; continue}
 
 			let fullHand = [...this.#players[i].hand, ...this.communityCards]
+			let lastFullhand = [...winners[0].hand, ...this.communityCards]
 
-			if (pokerHandValueTable[pokerHandType(fullHand)] > pokerHandValueTable[pokerHandType(winnerIndexes[0].hand)]) {
-				winnerIndexes = []
-				winnerIndexes[0] = this.#players[i]
+			if (pokerHandValueTable[pokerHandType(fullHand)] > pokerHandValueTable[pokerHandType(lastFullhand)]) {
+				winners = []
+				winners[0] = this.#players[i]
 			}
 
-			else if (pokerHandValueTable[pokerHandType(fullHand)] == pokerHandValueTable[pokerHandType(winnerIndexes[0].hand)]) {
-				if (handScore(fullHand) > handScore(winnerIndexes[0].hand)) {
-					winnerIndexes = []
-					winnerIndexes[0] = this.#players[i]
-				} else {
-					winnerIndexes.appendChild(this.#players[i])
+			else if (pokerHandValueTable[pokerHandType(fullHand)] == pokerHandValueTable[pokerHandType(lastFullhand)]) {
+				if (handScore(fullHand) > handScore(lastFullhand)) {
+					winners = []
+					winners[0] = this.#players[i]
+				} else if (handScore(fullHand) == handScore(lastFullhand)) {
+					winners.push(this.#players[i])
 				}
 			}
 		}
-		this.#pot.reward(winnerIndexes)
+		this.#pot.reward(winners)
 
 		this.cardReveals()
 
 		this.#sendToAllPlayers({
 			type: "texasHoldEm",
-			act: "revealedWinners",
-			winners: winnerIndexes
+			action: "revealedWinners",
+			winners: winners
 		})
 	}
 
@@ -520,7 +548,7 @@ class TexasHoldEm extends Poker {
 		this.#pot.bet(this.#players[smallBlindIndex], bet)
 
 		// big blind
-		this.#pot.bet(smallBlindIndex == this.#players.length-1 ? this.#players[0] : this.players[smallBlindIndex + 1], bet*2)
+		this.#pot.bet(smallBlindIndex == this.#players.length-1 ? this.#players[0] : this.#players[smallBlindIndex + 1], bet*2)
 		
 		// Person next to the big blind, who will be the person to start playing in the game
 		this.#firstToPlayIndex = (smallBlindIndex == this.#players.length-2 ? 0 : smallBlindIndex+2)
@@ -529,12 +557,10 @@ class TexasHoldEm extends Poker {
 
 		// Ante is also the start of the game, so we give everyone their hands.
 		var hands = []
-		deal(this.#players.length, hands)
+		this.deal(this.#players.length, hands)
 
-		// Give ourselves our hand
-		this.#players[0].hand = hands[0]
-		for (var i = 1; i < this.#players.length; i++) {
-			// Give everyone else their hands
+		// Give everyone their hands
+		for (let i = 0; i < this.#players.length; i++) {
 			this.#players[i].hand = hands[i]
 
 			// and tell them they have gotten a hand
@@ -552,6 +578,8 @@ class TexasHoldEm extends Poker {
 				]
 			})
 		}
+
+		this.#sendToAllPlayers(this.getGameState())
 	}
 
 	#flop() {
@@ -615,6 +643,8 @@ class TexasHoldEm extends Poker {
 				for (var i = 0; i < this.#players.length; i++) {
 					if (this.#players[i].state != "folded") {
 						this.#players[i].state = "none"
+
+						this.#sendToAllPlayers(this.getGameState())
 					}
 				}
 
@@ -636,11 +666,11 @@ class TexasHoldEm extends Poker {
 							this.endGame()
 							break
 					}
-				}
+				} else {this.#raised = false} // Otherwise, we'll get 'em next round.
 			}
 
-			// If the player who would play has folded, they do not have a turn, so its the next persons!
-		} while (this.#players[this.#toPlayIndex].state != "folded")
+			// If the player who would play has folded, they do not have a turn, so it must be the next persons!
+		} while (this.#players[this.#toPlayIndex].state == "folded")
 
 		// Tell everyone whose turn it is!
 		this.#sendToAllPlayers({
@@ -656,14 +686,15 @@ class TexasHoldEm extends Poker {
 			var player = this.#players[playerIndex]
 			if (player.state != "folded") {
 				this.#pot.raise(player, raise)
-				player.state = "raise"
+				player.state = "raised"
 				this.#raised = true
 				
 				this.#sendToAllPlayers({
 					type: "texasHoldEm",
 					action: "playerRaised",
 					raiseAmount: raise,
-					playerIndex: playerIndex
+					playerIndex: playerIndex,
+					player: this.#players[playerIndex]
 				})
 
 				this.#nextTurn()
@@ -671,18 +702,19 @@ class TexasHoldEm extends Poker {
 		}
 	}
 
-	playerCall(playerIndex) {
+	playerCall(playerIndex) { 
 		if (playerIndex == this.#toPlayIndex) {
 			var player = this.#players[playerIndex]
 			if (player.state != "folded") {
 				this.#pot.call(player)
-				player.state = "call"
+				player.state = "called"
 
 
 				this.#sendToAllPlayers({
 					type: "texasHoldEm",
 					action: "playerCalled",
-					playerIndex: playerIndex
+					playerIndex: playerIndex,
+					player: this.#players[playerIndex]
 				})
 
 				this.#nextTurn()
@@ -692,12 +724,13 @@ class TexasHoldEm extends Poker {
 
 	playerFold(playerIndex) {
 		if (playerIndex == this.#toPlayIndex) {
-			this.#players[playerIndex] = "folded"
+			this.#players[playerIndex].state = "folded"
 
 			this.#sendToAllPlayers({
 				type: "texasHoldEm",
 				action: "playerFolded",
-				playerIndex: playerIndex
+				playerIndex: playerIndex,
+				player: this.#players[playerIndex]
 			})
 
 			this.#nextTurn()
@@ -708,8 +741,7 @@ class TexasHoldEm extends Poker {
 
 // Note that tableau is the community cards; I just used it as the name since it is more generic.
 const texasHoldEmHTML = `
-<span class="currentChips" id="texasHoldEmCurrentChips"></span>
-<span class="currentBet" id="texasHoldEmCurrentBet"></span>
+<label for="texasHoldEmRaiseInput">raise input:</label>
 <input class="raiseInput" id="texasHoldEmRaiseInput"></input>
 <button class="raise" id="texasHoldEmRaise"></button>
 <button class="call" id="texasHoldEmCall"></button>
@@ -727,7 +759,6 @@ const texasHoldEmHTML = `
 */
 export class TexasHoldEmHTMLHandler {
 	// Arbitrarily accessible class attributes for easy access to DOM elements.
-	currentChips
 	currentBet
 	raiseInput
 	raise
@@ -735,46 +766,27 @@ export class TexasHoldEmHTMLHandler {
 	fold
 	hand
 	tableau
-	gameOutput
+	gameOutput // Usage of gameOutput should be liberally changed into wiser bits of UI. For now though, its a nice placeholder.
+
 	playerStates
 	playerSelfIndex
-	isHost
 
-	#texasHoldEm
-	#players
+	sendToHost
 
 	constructor(document, container, 
-		/* 	Assumes an array of objects with:
-			.chipsRemaining, which is a mutable value of chips to lose or grow larger through bets
-			.chipsBet, which is a mutable value of chips that they have dedicated in the current game
-			and a .send() function, equivalent to a NetworkingAPI.sendObject() but passed with the ID for the player
-
-			.send() is of particular importance, as the caller of this needs its own .send() to get objects without networking,
-			This is since certain .send() calls tell everyone what to render, and that includes this object!
-			It is also notable in that it handles all game state interfacing. 
-			If you have AI, you'll likely have a player with a unique .send()
-
-			Each will eventually be assigned a .state variable, either "none" "called" "folded" or "raised"
-			And a .hand variable.
-
-			Therefore, make this array per construction of TexasHoldEmHTMLHandler. It is transitory in design.
-		*/
 		players,
 		playerSelfIndex, // The index for the player representing the creator of this HTMLHandler.
-		isHost
+
+		// A NetworkAPI.sendObject function directed to the host of the game, for game actions.
+		// If you are the host, this must instead be a function that passes to the game itself: texasHoldEm.receiveAction(action)
+		sendToHost
 	) {
 		container.insertAdjacentHTML("beforeend", texasHoldEmHTML)
 
-		this.#players = players
-		this.isHost = isHost
-		if (this.isHost) {
-			this.#texasHoldEm = new TexasHoldEm()
-		}
 		this.playerSelfIndex = playerSelfIndex
+		this.sendToHost = sendToHost
 
 		this.document = document
-		this.currentChips = document.getElementById("texasHoldEmCurrentChips")
-		this.currentBet = document.getElementById("texasHoldEmCurrentBet")
 		this.raiseInput = document.getElementById("texasHoldEmRaiseInput")
 		// need a "current pot" element here, likely.
 		this.raise = document.getElementById("texasHoldEmRaise")
@@ -788,18 +800,21 @@ export class TexasHoldEmHTMLHandler {
 		this.playerStates = document.getElementById("texasHoldemPlayerStates")
 		this.gameOutput = document.getElementById("texasHoldemOutput")
 
-		for (var i = 0; i < this.#players.length; i++) {
+		for (var i = 0; i < players.length; i++) {
 			const player = this.document.createElement("li")
 			player.classList.add("player")
 			player.dataset.state = "none"
+			player.dataset.name = players[i].name
 			player.dataset.index = i
+			player.dataset.chipsRemaining = players[i].chipsRemaining
+			player.dataset.chipsBet = players[i].chipsBet
 
 			this.playerStates.appendChild(player)
 		}
 
 
 		this.call.onclick = () => {
-			this.#players[0].send({
+			this.sendToHost({
 				type: "texasHoldEm",
 				action: "call",
 				playerIndex: playerSelfIndex
@@ -807,16 +822,16 @@ export class TexasHoldEmHTMLHandler {
 		}
 
 		this.raise.onclick = () => {
-			this.#players[0].send({
+			this.sendToHost({
 				type: "texasHoldEm",
 				action: "raise",
 				playerIndex: playerSelfIndex,
-				raise: this.raiseInput.value
+				raise: Number(this.raiseInput.value)
 			})
 		}
 
 		this.fold.onclick = () => {
-			this.#players[0].send({
+			this.sendToHost({
 				type: "texasHoldEm",
 				action: "fold",
 				playerIndex: playerSelfIndex
@@ -833,9 +848,18 @@ export class TexasHoldEmHTMLHandler {
 	updatePlayerState(playerIndex, state) {
 		const playerStates = this.playerStates.querySelectorAll(`[data-index="${playerIndex}"`)
 		playerStates.forEach(playerState => {
-			playerState.dataset.state = state // as in fold, call, or raise
+			playerState.dataset.state = state // as in folded, called, or raised
 		})
 	}
+
+	updatePlayerBalance(playerIndex, chipsBet, chipsRemaining) {
+		const playerStates = this.playerStates.querySelectorAll(`[data-index="${playerIndex}"`)
+		playerStates.forEach(playerState => {
+			playerState.dataset.chipsBet = chipsBet
+			playerState.dataset.chipsRemaining = chipsRemaining
+		})
+	}
+
 
 	renderHand(hand) {
 		for (let i = 0; i < hand.length; i++) {
@@ -851,20 +875,27 @@ export class TexasHoldEmHTMLHandler {
 
 	// Essentially, we want the NetworkAPI to give any texasHoldEm actions to the HTMLHandler, so we can handle them.
 	// We expect that NetworkAPI to send a JavaScript object converted from a sent JSON message.
+
+	// A lot of these are frankly really stupid, and should be consolidated.
+	// For one, most actions dedicated to rendering are pretty much just be some variation of the "gameState" action 
 	receiveAction(actionObject) {
 		switch(actionObject.action) {
 			case "giveHand":
 				this.renderHand(actionObject.hand)
 				break
-			case "raise":
-				if (this.isHost) {this.#texasHoldEm.playerRaise(actionObject.playerIndex, actionObject.bet)}
+
+			case "nextTurn": 
+				if (actionObject.toPlay == this.playerSelfIndex) {
+					const p = this.document.createElement("p")
+					p.innerText = "It is your turn to play!"
+					this.gameOutput.appendChild(p)
+				} else {
+					const p = this.document.createElement("p")
+					p.innerText = "It is player " + actionObject.toPlay + "'s turn."
+					this.gameOutput.appendChild(p)
+				}
 				break
-			case "call":
-				if (this.isHost) {this.#texasHoldEm.playerCall(actionObject.playerIndex)}
-				break
-			case "fold":
-				if (this.isHost) {this.#texasHoldEm.playerFold(actionObject.playerIndex)}
-				break
+
 			case "flop":
 				for (let i = 0; i < actionObject.flopped.length; i++) {
 					const card = this.document.createElement("li")
@@ -876,14 +907,16 @@ export class TexasHoldEmHTMLHandler {
 					this.tableau.appendChild(card)
 				}
 				break
+
 			case "turn": {
 				const card = this.document.createElement("li")
 				card.classList.add("card")
 				card.dataset.label = actionObject.card.label
 				card.dataset.suit = actionObject.card.suit
 				card.dataset.index = 3
-				this.tableau.appendChild(card)
+				this.tableau.appendChild(card) 
 			} break
+
 			case "river": {
 				const card = this.document.createElement("li")
 				card.classList.add("card")
@@ -892,14 +925,65 @@ export class TexasHoldEmHTMLHandler {
 				card.dataset.index = 4
 				this.tableau.appendChild(card)
 			} break
+
+			case "revealedWinners": {
+				actionObject.winners.forEach(winner => {
+					const p = this.document.createElement("p")
+					p.innerText = p.innerText + winner.name + " won!\n"
+					this.gameOutput.appendChild(p)
+				})
+			} break
+
+			case "showHand": {
+				const p = this.document.createElement("p")
+				p.innerText = actionObject.player.name + " had " + actionObject.player.hand[0].label + " " + actionObject.player.hand[0].suit
+				+ " and " + actionObject.player.hand[1].label + " " + actionObject.player.hand[1].suit + ". A " + actionObject.handType
+
+				this.gameOutput.appendChild(p)
+				this.updatePlayerBalance(actionObject.ownerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerRaised": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " raised " + actionObject.raiseAmount
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "raised")
+				this.updatePlayerBalance(actionObject.playerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerCalled": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " called."
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "called")
+				this.updatePlayerBalance(actionObject.playerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerFolded": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " called."
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "folded")
+			} break
+
+			case "gameState": {
+				for (let i = 0; i < actionObject.players.length; i++) {
+					this.updatePlayerState(i, actionObject.players[i].state)
+					this.updatePlayerBalance(i, actionObject.players[i].chipsBet, actionObject.players[i].chipsRemaining)
+				}
+			} break
+
+			// Kind of stupid, but I like the logic.
+			// The host has sendToHost() send this to the host stuff, whilst others have sendToHost() send it to the host.
+			case "raise":
+			case "call":
+			case "fold":
+				this.sendToHost(actionObject)
+				break
 		}
-	}
-
-
-
-	async start(smallBlindIndex) {
-		this.#texasHoldEm.ante(smallBlindIndex)
-		this.renderHand(hands[this.#players[0]])
 	}
 }
 
@@ -909,6 +993,7 @@ export class Player {
 	chipsRemaining = 0
 	chipsBet = 0
 	state = "none"
+	name = "anonymous"
 	
 	constructor(sendFunction) {
 		this.send = sendFunction
