@@ -3,18 +3,16 @@ Requires node.js to run.
 
 Current structure:
 ```
+dev:						old/wip files
 static:
 	|- index.html:			main page
 	|- main-page.js:		code for main page
 	|- player-api.js		player data interface
+	|- flying-casino.js		global values + utility functions
 	network:
 		|- network.html:	test datachannel site
 		|- network.js:		main networking api
-	cards:
-		|- card.js			base card class
-		|- deck.js			base pattern for card games
-		|- cards-demo.html	small game demo
-		|- poker.js			game #1: poker
+	cards:					contains modularized card games
 	lobby:
 		|- lobby.html		lobby selection screen
 		|- lobby.js			controls dynamic lobby selection
