@@ -15,6 +15,7 @@
 	<script type = "module">
 		import { TexasHoldEm, TexasHoldEmHTMLHandler, Player } from "./poker.js"
 		import { constructNetworkAPI } from "../network/network.js"
+		import { signalServerAddress } from "../flying-casino.js"
 
 		const gameSpace = document.getElementById("gameSpace")
 		const createGame = document.getElementById("createGame")
@@ -23,7 +24,7 @@
 		const messages = document.getElementById("messageBox")
 		
 		var htmlHandler = null
-		var network = await constructNetworkAPI("wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/")
+		var network = await constructNetworkAPI(signalServerAddress)
 
 		var hostID = 0 // Luckily, you cannot generate a UUID of 0!.. I think.
 		var texasHoldEmPlayers = []

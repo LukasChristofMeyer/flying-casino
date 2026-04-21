@@ -1,6 +1,9 @@
 import { retrievePlayerData } from "../player-api.js"
+import { apiAddress, debugLog } from "../flying-casino.js";
 
 const player = retrievePlayerData();
+
+const decoder = new TextDecoder();
 
 // ── Storage ──
 const STORAGE_KEY = 'fcp_rooms';
@@ -16,10 +19,21 @@ const GAME_PAGES = {
 	'holdem':      '../cards/holdem.html',
 };
 
-function getRooms() {
-	try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-	catch { return []; }
+/** Reads a list of rooms from the API as an array of room objects
+ * @returns {Array<{ name: string, creator: string, id: string, game: string }>}
+*/
+async function getRooms() {
+	// Readable stream nonsense
+	const response = await fetch(apiAddress);
+	let apiResponse = "";
+	for await (const chunk of response.body)
+		apiResponse += decoder.decode(chunk);
+
+	debugLog('api response:', JSON.parse(apiResponse));
+
+	return JSON.parse(apiResponse);
 }
+window.getRooms = getRooms;
 
 function saveRooms(rooms) {
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms));
@@ -32,6 +46,9 @@ function escapeHtml(str) {
 }
 
 // ── View switching ──
+/** The selected game.
+ * @type {string}
+ */
 let currentGame = null;
 
 function showView(id) {
@@ -44,23 +61,25 @@ function showGames() {
 	showView('view-games');
 }
 
+/** Show the gamemode for the current game.
+ * @param {string} game game title, defined in HTML
+ */
 function showMode(game) {
 	currentGame = game;
 	document.getElementById('mode-view-title').textContent = GAME_LABELS[game] || game;
 	showView('view-mode');
 }
 
-function showRooms(game) {
-	currentGame = game;
-	document.getElementById('room-view-title').textContent = GAME_LABELS[game] || game;
+function showRooms() {
+	document.getElementById('room-view-title').textContent = GAME_LABELS[currentGame] || currentGame;
 	document.getElementById('player-name').textContent = player.getName();
 	showView('view-rooms');
 	renderRooms();
 }
 
 // ── Room rendering ──
-function renderRooms() {
-	const all     = getRooms().filter(r => r.game === currentGame);
+async function renderRooms() {
+	const all     = (await getRooms()).filter(r => r.game === currentGame);
 	const list    = document.getElementById('lobby-list');
 	const empty   = document.getElementById('empty-msg');
 	const counter = document.getElementById('open-count');
@@ -112,7 +131,7 @@ document.getElementById('btn-solo').addEventListener('click', () => {
 });
 
 document.getElementById('btn-multi').addEventListener('click', () => {
-	showRooms(currentGame);
+	showRooms();
 });
 
 document.getElementById('btn-back-mode').addEventListener('click', showGames);

@@ -26,11 +26,12 @@
 	<script type="module">
 		import { TexasHoldEmHTMLHandler, Player } from "./poker.js"
 		import { constructNetworkAPI } from "../network/network.js"
+		import { signalServerAddress } from "../flying-casino.js"
 
 		const gameSpace = document.getElementById("gameSpace")
 
 		var htmlHandler = null
-		var network = await constructNetworkAPI("wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/")
+		var network = await constructNetworkAPI(signalServerAddress)
 
 		network.onMessage = (message) => {
 			let messageObject = JSON.parse(message.data)
