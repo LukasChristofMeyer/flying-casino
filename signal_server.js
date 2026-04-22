@@ -168,9 +168,8 @@ app.post('/create-room', (request, response) => {
 	room.game = roomCreateRequest.game || 'video-poker';
 
 	// Generate unique ID
-	let id;
-	while (roomDict.get(id = crypto.randomUUID()));
-	roomDict.set(id, room);
+	while (roomDict.get(room.id = crypto.randomUUID()));
+	roomDict.set(room.id, room);
 
 	response.setHeader('Access-Control-Allow-Origin', '*');
 	// Only way to "close" a one sided request
