@@ -1,7 +1,7 @@
 /** Server IP for API
  * @type {string}
  */
-export const apiAddress = "http://localhost:443/rooms";
+export const apiAddress = "http://localhost:443";
 
 /** Server IP for signaling server
  * @type {string}

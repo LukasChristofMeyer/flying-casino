@@ -84,19 +84,13 @@ function showLoadingOverlay(mode) {
 		transition: opacity 0.4s 0.3s;
 		text-align: center;
 	`;
-	msg.innerHTML = mode === 'solo'
-		? '🎱&nbsp; Loading Solo Game&hellip;'
-		: '🎱&nbsp; Finding Players&hellip;';
+	msg.innerHTML = '🎱&nbsp; Loading Games&hellip;'
 	overlay.appendChild(msg);
 	requestAnimationFrame(() => requestAnimationFrame(() => msg.style.opacity = '1'));
 	overlay.addEventListener('click', () => overlay.remove());
 }
 
-document.getElementById('btn-singleplayer').addEventListener('click', () => {
+document.getElementById('btn-play').addEventListener('click', () => {
 	initializePlayerData(nameInput.value);
 	showLoadingOverlay('solo');
-});
-document.getElementById('btn-multiplayer').addEventListener('click',  () => {
-	initializePlayerData(nameInput.value);
-	showLoadingOverlay('multi');
 });

@@ -1,9 +1,11 @@
 /** An interface for player data between the game(s) and the local storage. */
 class LocalPlayerData {
+	/** @type {string} */
 	#name
 	constructor(name) {
 		this.#name = name;
 	}
+
 	getName() {
 		return this.#name;
 	}
