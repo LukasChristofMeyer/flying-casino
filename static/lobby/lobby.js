@@ -23,8 +23,8 @@ const GAME_PAGES = {
  * @returns {Array<{ name: string, creator: string, id: string, game: string }>}
 */
 async function getRooms() {
-	// Readable stream nonsense
-	const response = await fetch(apiAddress);
+	const response = await fetch(apiAddress + '/rooms');
+
 	let apiResponse = "";
 	for await (const chunk of response.body)
 		apiResponse += decoder.decode(chunk);
@@ -78,8 +78,11 @@ function showRooms() {
 }
 
 // ── Room rendering ──
-async function renderRooms() {
-	const all     = (await getRooms()).filter(r => r.game === currentGame);
+/** Displays a list of available multiplayer tables.
+ * @param {Array<{ name: string, creator: string, id: string, game: string }>} rooms (optional) list of rooms
+ */
+async function renderRooms(rooms) {
+	const all     = (rooms || await getRooms()).filter(r => r.game === currentGame);
 	const list    = document.getElementById('lobby-list');
 	const empty   = document.getElementById('empty-msg');
 	const counter = document.getElementById('open-count');
@@ -104,20 +107,31 @@ async function renderRooms() {
 }
 
 // ── Create room ──
-document.getElementById('create-btn').addEventListener('click', () => {
+function createRoom() {
+	/** @type {HTMLInputElement} */
 	const nameInput = document.getElementById('room-name');
 	const name = nameInput.value.trim() || `${player.getName()}'s Table`;
 
-	const rooms = getRooms();
-	rooms.unshift({
-		id:      crypto.randomUUID(),
-		name,
-		game:    currentGame,
-		creator: player.getName()
-	});
-	saveRooms(rooms);
-	renderRooms();
+	// Cleared immediately
 	nameInput.value = '';
+
+	// Send room creation request to server
+	const request = new XMLHttpRequest();
+	// Rooms are re-rendered upon response from server
+	request.addEventListener('load', () => renderRooms());
+	request.open('POST', apiAddress + '/create-room');
+
+	const roomCreateRequest = new Blob([ JSON.stringify({
+		game: currentGame,
+		name: name,
+		creator: player.getName()
+	}) ], { type: 'text/plain '});
+
+	request.send(roomCreateRequest);
+}
+
+document.getElementById('create-btn').addEventListener('click', () => {
+	createRoom();
 });
 
 // ── Game card clicks → go to mode select ──

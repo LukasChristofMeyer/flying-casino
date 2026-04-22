@@ -41,18 +41,21 @@ class Room {
 
 	constructor() {
 		this.#socketDict = new Map();
-		// Development values
+		// Initialized later
+		/** UUID */
+		this.id = '';
 		/** Name of the room */
-		this.name = "room #" + (Math.random() * 24 | 0);
+		this.name = '';
 		/** Username of the room's creator */
-		this.creator = "user" + (Math.random() * 10_000 | 0).toString().padStart(4, "0");
+		this.creator = '';
 		/** Name of the game being played */
-		this.game = "video-poker";
+		this.game = '';
 	}
 
 	/** Returns API-related information, like owner and number of players */
 	get info() {
 		return {
+			id: this.id,
 			name: this.name,
 			creator: this.creator,
 			game: this.game
@@ -86,7 +89,10 @@ class Room {
 
 	}
 
-	/** Broadcasts a message to everyone but a certain peer */
+	/** Broadcasts a message to everyone but a certain peer
+	 * @param {string} ignoreUUID send to everyone but this
+	 * @param {string} message
+	 */
 	exclusiveBroadcast(ignoreUUID, message) {
 		for (const [peerUUID, peerSocket] of this.#socketDict)
 			if (peerUUID != ignoreUUID)
@@ -94,7 +100,7 @@ class Room {
 	}
 }
 
-/**
+/** WIP handler for signaling server
  * @param {WebSocket} socket 
  */
 function handler(socket) {
@@ -115,28 +121,6 @@ function handler(socket) {
 					);
 				room.add(uuid, socket);
 
-				/*let room;
-				if (!(room = rooms[room_id])) {
-					// Create a new room
-					room = rooms[room_id] = {};
-				}
-				room[peer_id] = socket;
-
-				// Reveal other peers to new client
-				socket.send(JSON.stringify({
-					'type': 'welcome',
-					'id': peer_id,
-					'peers': Object.keys(room).join(',')
-				}));
-
-				// Tell existing peers about this client
-				for (const peer in room)
-					if (peer != peer_id)
-						room[peer].send(JSON.stringify({
-							'type': 'new-peer',
-							'id': peer_id
-						}))
-				*/
 				break;
 			case 'send':
 				const targetPeer = packet.to;
@@ -152,31 +136,45 @@ function handler(socket) {
 
 // Host for lobby API
 const app = express();
+// Needed to view POST requests
+app.use(express.text());
 
 // Debug purposes only
-for (let r = 0; r < Math.random() * 24; ++r)
-	roomDict.set(crypto.randomUUID(), new Room());
+//for (let r = 0; r < Math.random() * 24; ++r) roomDict.set(crypto.randomUUID(), new Room());
 
 app.get('/rooms', (request, response) => {
 	/** @type {Room} */
 	let room;
-	// Need to make rooms self-aware of ID, and decide which side (server/client) is in control of room properties
-	let API = roomDict.keys().map(id => (
-		room = roomDict.get(id),
-		{
-			id: id,
-			name: room.info.name,
-			game: room.info.game,
-			creator: room.info.creator
-		}
-	)).toArray();
+
+	// Generate room list
+	let API = roomDict.values().map(room => room.info).toArray();
 
 	console.log('API response:', JSON.stringify(API));
 
 	// Necessary for allowing insecure access
-	response.setHeader("Access-Control-Allow-Origin", "*");
+	response.setHeader('Access-Control-Allow-Origin', '*');
 
 	response.send(API);
+});
+
+app.post('/create-room', (request, response) => {
+	console.log('Received room creation request');
+
+	const roomCreateRequest = JSON.parse(request.body);
+
+	let room = new Room();
+	room.creator = roomCreateRequest.creator || 'unknown #' + (Math.random() * 10_000 | 0).padStart(4, '0');
+	room.name = roomCreateRequest.name || `${room.creator}'s Table`;
+	room.game = roomCreateRequest.game || 'video-poker';
+
+	// Generate unique ID
+	let id;
+	while (roomDict.get(id = crypto.randomUUID()));
+	roomDict.set(id, room);
+
+	response.setHeader('Access-Control-Allow-Origin', '*');
+	// Only way to "close" a one sided request
+	response.send('');
 });
 
 app.listen(roomServiceConfig.port, roomServiceConfig.hostname, () => {
