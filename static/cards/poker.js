@@ -5,7 +5,7 @@ import {Deck} from "./deck.js"
 // Would like to officially note this function is poorly made! Refactoring it to make it fancy would be a cool stretch goal.
 // Particularly, it'd be nice if we could return a struct showing exactly what cards made up a hand, like a pair.
 // That would be especially nice considering that the winner of a draw is decided on the value of those cards.
-function pokerHandType(hand) {
+export function pokerHandType(hand) {
 	var labelCounts = {
 		"Ace" : 0,
 		"Two" : 0,
@@ -67,7 +67,7 @@ function pokerHandType(hand) {
 	return "High Card"
 }
 
-const pokerHandValueTable = {
+export const pokerHandValueTable = {
 	"High Card" : 0,
 	"Pair" : 1,
 	"Two Pair" : 2,
@@ -80,7 +80,7 @@ const pokerHandValueTable = {
 	"Five of a Kind" : 9
 }
 
-function handScore(hand) {
+export function handScore(hand) {
 	var score = 0;
 	hand.forEach(card => {
 		score = score + card.value
