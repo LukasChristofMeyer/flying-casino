@@ -3,6 +3,10 @@ import { Player, pokerHandType, TexasHoldEm, Poker } from "./poker.js";
 class PokerAI extends Player {
     AIIndex;
 
+    constructor (index) {
+        this.AIIndex = index;
+    }
+
     decisionMaking(pokerHandType) {
         handType = pokerHandType(TexasHoldEm.hand[AIIndex]);                // get hand type
 
@@ -19,10 +23,10 @@ class PokerAI extends Player {
         decision = Math.random() * luckCoeffecient;                         // get random decision value 
 
         if (decision <= 1) {                                                // apply decision to raise, call, or fold
-            if (this.chipsRemaining > 100) {TexasHoldEm.PlayerRaise(this.AIIndex,100)}
-            else {TexasHoldEm.PlayerCall(this.AIIndex)}
+            if (this.chipsRemaining > 100) {TexasHoldEm.PlayerRaise(this.AIIndex,100);}
+            else {TexasHoldEm.PlayerCall(this.AIIndex);}
         }
-        else if (decision <= 3) {TexasHoldEm.PlayerCall(this.AIIndex)}
-        else {TexasHoldEm.PlayerFold(this.AIIndex)}
+        else if (decision <= 3) {TexasHoldEm.PlayerCall(this.AIIndex);}
+        else {TexasHoldEm.PlayerFold(this.AIIndex);}
     }
 }
