@@ -249,7 +249,7 @@ html, body {
     inset 2px 2px 4px rgba(255,255,255,0.4);
 }
 
-/* Triangle rack — tight cluster, bottom right, clear of buttons */
+/* Triangle rack — bottom-right corner, below the cue sticks */
 .b1  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #fff8e0, #f0c010); bottom:6%;  right:20%; }
 .b2  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #ffaaaa, #cc0000); bottom:12%; right:16%; }
 .b3  { width:22px; height:22px; background: radial-gradient(circle at 35% 30%, #aaaaff, #2222cc); bottom:12%; right:24%; }
@@ -272,7 +272,7 @@ html, body {
   font-weight: 700;
 }
 
-/* Cue ball — bottom left corner */
+/* Cue ball — bottom-left corner */
 .bcue {
   width: 26px; height: 26px;
   background: radial-gradient(circle at 35% 30%, #ffffff, #ddddc8);
