@@ -1,113 +1,412 @@
 <!DOCTYPE html>
-<html lang = "en">
-
 <head>
-	<title>The Flying Casino</title>
+	<title>WebRTC Test — Flying Casino</title>
+	<link rel="stylesheet" href="../main-page.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:wght@700;900&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+	<style>
+		.net-panel {
+			width: 480px;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.net-title {
+			font-family: 'Playfair Display', serif;
+			font-size: 28px;
+			font-weight: 900;
+			color: var(--gold-light);
+			letter-spacing: 2px;
+			text-shadow:
+				0 0 18px rgba(200,160,50,0.9),
+				0 0 50px rgba(200,160,50,0.35),
+				2px 3px 0 rgba(0,0,0,0.5);
+			animation: titleGlow 3.5s ease-in-out infinite;
+			margin-bottom: 2px;
+		}
+
+		.net-subtitle {
+			font-size: 11px;
+			color: rgba(210,210,200,0.4);
+			letter-spacing: 2px;
+			font-style: italic;
+			margin-bottom: 4px;
+		}
+
+		.net-section-label {
+			font-family: 'Cinzel', serif;
+			font-size: 9px;
+			letter-spacing: 3px;
+			text-transform: uppercase;
+			color: rgba(201,168,76,0.55);
+			margin-bottom: 5px;
+		}
+
+		.net-row {
+			display: flex;
+			gap: 7px;
+		}
+
+		.net-input {
+			flex: 1;
+			background: rgba(0,0,0,0.4);
+			border: 1.5px solid rgba(200,160,70,0.3);
+			border-radius: 3px;
+			color: var(--ivory);
+			padding: 8px 12px;
+			font-family: 'Open Sans', sans-serif;
+			font-size: 12px;
+			outline: none;
+			letter-spacing: 0.5px;
+			transition: border-color 0.2s;
+			cursor: none;
+		}
+
+		.net-input::placeholder { color: rgba(245,240,224,0.22); }
+		.net-input:focus { border-color: var(--gold); }
+
+		.net-btn {
+			background: linear-gradient(135deg, var(--felt-light), var(--felt-dark));
+			border: 1.5px solid var(--gold);
+			border-radius: 3px;
+			color: var(--ivory);
+			font-family: 'Cinzel', serif;
+			font-size: 9px;
+			letter-spacing: 2px;
+			padding: 8px 14px;
+			cursor: none;
+			white-space: nowrap;
+			transition: box-shadow 0.2s;
+			text-transform: uppercase;
+		}
+
+		.net-btn:hover { box-shadow: 0 0 12px rgba(200,160,50,0.35); }
+
+		.net-btn-gold {
+			background: linear-gradient(135deg, #c9a84c, #7a5c1a);
+			color: #1a0e04;
+			border-color: var(--gold-light);
+		}
+
+		.net-btn-gold:hover { box-shadow: 0 0 14px rgba(200,160,50,0.5); }
+
+		.net-log {
+			background: rgba(0,0,0,0.5);
+			border: 1px solid rgba(201,168,76,0.18);
+			border-radius: 3px;
+			padding: 10px 12px;
+			height: 130px;
+			overflow-y: auto;
+			display: flex;
+			flex-direction: column;
+			gap: 3px;
+		}
+
+		.net-log::-webkit-scrollbar { width: 3px; }
+		.net-log::-webkit-scrollbar-track { background: transparent; }
+		.net-log::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+
+		.net-log-entry {
+			font-family: 'Open Sans', sans-serif;
+			font-size: 11px;
+			letter-spacing: 0.3px;
+			line-height: 1.45;
+			color: rgba(245,240,224,0.65);
+		}
+
+		.net-log-entry.system { color: rgba(100,200,120,0.8); font-style: italic; }
+		.net-log-entry.direct { color: rgba(100,160,255,0.85); }
+		.net-log-entry.error  { color: rgba(255,100,100,0.8); font-style: italic; }
+
+		.net-status {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.net-status-chip {
+			font-size: 10px;
+			color: rgba(245,240,224,0.3);
+			letter-spacing: 1px;
+		}
+
+		.net-status-chip span {
+			color: rgba(201,168,76,0.7);
+			font-family: 'Cinzel', serif;
+			font-size: 9px;
+			letter-spacing: 1.5px;
+		}
+
+		.net-divider {
+			height: 1px;
+			background: rgba(201,168,76,0.12);
+		}
+
+		.back-link {
+			font-family: 'Open Sans', sans-serif;
+			font-size: 11px;
+			color: rgba(200,160,70,0.45);
+			text-decoration: none;
+			letter-spacing: 2px;
+			transition: color 0.2s;
+			cursor: none;
+			align-self: flex-start;
+		}
+
+		.back-link:hover { color: rgba(200,160,70,0.85); }
+
+		/* Shift ball cluster right so it clears the panel edge */
+		.b1  { right: 10% !important; }
+		.b2  { right:  6% !important; }
+		.b3  { right: 14% !important; }
+		.b4  { right:  2% !important; }
+		.b5  { right: 10% !important; }
+		.b6  { right: 18% !important; }
+		.b8  { right:  6% !important; }
+		.b9  { right: 14% !important; }
+		.b10 { right: 10% !important; }
+		.b11 { right: 18% !important; }
+		.b15 { right:  2% !important; }
+	</style>
 </head>
-
 <body>
-	<main>
-		<a href="../index.html">← Back</a>
-		<br><br>
-		<input id="roomInput" placeholder ="Room Name" value="global">
-		<button id="roomButton">Join Room</button>
 
-		</br>
+	<div id="cursor"></div>
 
-		<input id="messageInput" placeholder="Message">
-		<button id="sendMessage">Send</button>
+	<div id="lamp">
+		<div id="lamp-cord"></div>
+		<div id="lamp-shade"></div>
+	</div>
 
-		<div id="messageBox">
-			<p>Messages received:</p>
-		</div>
+	<div id="room">
+		<div id="table-wrap">
+			<div id="rail">
 
-		<input id="directInput" placeholder="Direct Message">
-		<input id="directTarget" placeholder="Direct Target">
-		<button id="directMessage">Send</button>
+				<div class="cue-stick" id="cue-left"><div class="cue-tip"></div></div>
+				<div class="cue-stick" id="cue-right"><div class="cue-tip"></div></div>
 
-		<script type = "module">
-			import { constructNetworkAPI } from "./network.js"
+				<div class="pocket tl"></div>
+				<div class="pocket tm"></div>
+				<div class="pocket tr"></div>
+				<div class="pocket bl"></div>
+				<div class="pocket bm"></div>
+				<div class="pocket br"></div>
 
-			async function init() {
-				var network = await constructNetworkAPI("wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/")
-				network.onmessage = (message) => {
-					const p = document.createElement ("p")
-					if (JSON.parse(message.data).direct) {
-						p.innerText = "Directly From: " + JSON.parse(message.data).from + "\n" + JSON.parse(message.data).text
-						p.style.color = "blue"
-					} else {
-						p.innerText = "From: " + JSON.parse(message.data).from + "\n" + JSON.parse(message.data).text
-					}
-					messages.appendChild(p)
-				}
+				<div id="felt">
+					<div class="spot"></div>
+					<div class="baulk-line"></div>
+					<div class="baulk-semi"></div>
+					<div id="chalk"></div>
 
-				const roomInput = document.getElementById("roomInput")
-				const roomButton = document.getElementById("roomButton")
+					<div class="ball bcue"></div>
+					<div class="ball b1"></div>
+					<div class="ball b2"></div>
+					<div class="ball b3"></div>
+					<div class="ball b4"></div>
+					<div class="ball b5"></div>
+					<div class="ball b6"></div>
+					<div class="ball b8"></div>
+					<div class="ball b9"></div>
+					<div class="ball b10"></div>
+					<div class="ball b11"></div>
+					<div class="ball b15"></div>
 
-				const input = document.getElementById("messageInput")
-				const button = document.getElementById("sendMessage")
-				const messages = document.getElementById("messageBox")
+					<div class="main-container">
+						<div class="main">
+							<div class="net-panel">
 
-				const directInput = document.getElementById("directInput")
-				const directTarget = document.getElementById("directTarget")
-				const directButton = document.getElementById("directMessage")
-				
+								<div class="net-title">WebRTC Test</div>
+								<div class="net-subtitle">peer-to-peer signaling diagnostics</div>
 
-				roomButton.onclick = async () => {
-					// Needed not just because it is good logic, 
-					// It is also since otherwise the server might allow one connection two data channels!
-					// Funnily, it only happens if you spam it since the server's slow. A local server has no issues. 
-					// Likely a smart and more proper fix, but for right now, whatever, right? 
-					if (roomInput.value === network.roomId) {return}
+								<!-- Status bar -->
+								<div class="net-status">
+									<div class="net-status-chip">room: <span id="status-room">global</span></div>
+									<div class="net-status-chip">id: <span id="status-id">—</span></div>
+								</div>
 
-					network.destroy()
-					network = await constructNetworkAPI(
-						"wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/",
-						roomInput.value
-					)
-					const p = document.createElement ("p")
-					p.innerText = "Joined room: " + roomInput.value
-					p.style.color = "green"
-					
-					messages.appendChild(p)
+								<div class="net-divider"></div>
 
-					network.onmessage = (message) => {
-						const p = document.createElement ("p")
-						if (JSON.parse(message.data).direct) {
-							p.innerText = "Directly From: " + JSON.parse(message.data).from + "\n" + JSON.parse(message.data).text
-							p.style.color = "blue"
-						} else {
-							p.innerText = "From: " + JSON.parse(message.data).from + "\n" + JSON.parse(message.data).text
-						}
-						messages.appendChild(p)
-					}
-				}
+								<!-- Room -->
+								<div class="net-section-label">Join Room</div>
+								<div class="net-row">
+									<input id="roomInput" class="net-input" placeholder="Room name…" value="global">
+									<button id="roomButton" class="net-btn net-btn-gold">Join</button>
+								</div>
 
-				button.onclick = () => {
-					network.broadcastObject({
-						text: input.value
-					})
-					input.value = ""
-				}
+								<!-- Log -->
+								<div class="net-section-label">Message Log</div>
+								<div class="net-log" id="messageBox"></div>
 
-				directButton.onclick = () => {
-					try {
-						network.sendObject(
-							{
-								text: directInput.value,
-								direct: true
-							},
-							directTarget.value
-						)
-					} catch (e) {
-						console.log(e)
-					}
-					directInput.value = ""
+								<!-- Broadcast -->
+								<div class="net-section-label">Broadcast</div>
+								<div class="net-row">
+									<input id="messageInput" class="net-input" placeholder="Message to all…">
+									<button id="sendMessage" class="net-btn">Send</button>
+								</div>
+
+								<!-- Direct -->
+								<div class="net-section-label">Direct Message</div>
+								<div class="net-row">
+									<input id="directInput" class="net-input" placeholder="Message…">
+									<input id="directTarget" class="net-input" style="max-width:130px" placeholder="Peer ID…">
+									<button id="directMessage" class="net-btn">Send</button>
+								</div>
+
+								<a href="../index.html" class="back-link">← Back</a>
+
+							</div>
+						</div>
+					</div>
+
+				</div><!-- /felt -->
+			</div><!-- /rail -->
+		</div><!-- /table-wrap -->
+	</div><!-- /room -->
+
+	<div id="credits">
+		<span id="credits-title">Flying Casino</span>
+		&nbsp;·&nbsp; Free online multiplayer card games &nbsp;·&nbsp; No account required
+		&nbsp;&nbsp;|&nbsp;&nbsp;
+		Lukas Meyer &nbsp;·&nbsp; Lia Smith &nbsp;·&nbsp; Daniel Johnson &nbsp;·&nbsp; Thornton Gray
+	</div>
+
+	<script type="module">
+		import { constructNetworkAPI } from "./network.js"
+
+		// ── Custom cursor ──
+		const cursor = document.getElementById('cursor')
+		document.addEventListener('mousemove', e => {
+			cursor.style.left = e.clientX + 'px'
+			cursor.style.top  = e.clientY + 'px'
+		})
+
+		const hoverTargets = '.net-btn, .net-input, .back-link'
+		document.querySelectorAll(hoverTargets).forEach(el => {
+			el.addEventListener('mouseenter', () => {
+				cursor.style.width      = '16px'
+				cursor.style.height     = '16px'
+				cursor.style.background = '#c9a84c'
+			})
+			el.addEventListener('mouseleave', () => {
+				cursor.style.width      = '8px'
+				cursor.style.height     = '8px'
+				cursor.style.background = 'var(--white-ball)'
+			})
+		})
+
+		// ── Felt ripple ──
+		document.getElementById('felt').addEventListener('click', function(e) {
+			if (e.target.closest('.net-btn, .net-input, .back-link')) return
+			const rect   = this.getBoundingClientRect()
+			const ripple = document.createElement('div')
+			ripple.style.cssText = `
+				position:absolute;
+				left:${e.clientX - rect.left}px;top:${e.clientY - rect.top}px;
+				width:4px;height:4px;
+				border:2px solid rgba(255,255,255,0.45);border-radius:50%;
+				transform:translate(-50%,-50%);
+				animation:rippleOut 0.65s ease-out forwards;
+				pointer-events:none;z-index:50;
+			`
+			this.appendChild(ripple)
+			setTimeout(() => ripple.remove(), 750)
+		})
+
+		// ── Ball jiggle ──
+		document.querySelectorAll('.ball').forEach(ball => {
+			ball.addEventListener('mouseenter', function() {
+				this.style.transition = 'transform 0.15s'
+				this.style.transform  = `translate(${(Math.random()-.5)*10}px,${(Math.random()-.5)*10}px) scale(1.18)`
+			})
+			ball.addEventListener('mouseleave', function() {
+				this.style.transform = ''
+			})
+		})
+
+		// ── Network logic ──
+		const log = document.getElementById('messageBox')
+		const statusRoom = document.getElementById('status-room')
+		const statusId   = document.getElementById('status-id')
+
+		function addEntry(text, type = '') {
+			const el = document.createElement('div')
+			el.className = 'net-log-entry' + (type ? ' ' + type : '')
+			el.textContent = text
+			log.appendChild(el)
+			log.scrollTop = log.scrollHeight
+		}
+
+		async function init() {
+			let network = await constructNetworkAPI(
+				"wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/",
+				"global"
+			)
+
+			statusId.textContent = network.id
+			addEntry('Connected — room: global', 'system')
+
+			network.onmessage = (message) => {
+				const data = JSON.parse(message.data)
+				if (data.direct) {
+					addEntry(`Direct from ${data.from}: ${data.text}`, 'direct')
+				} else {
+					addEntry(`From ${data.from}: ${data.text}`)
 				}
 			}
-			init()
-		</script>
-	</main>
-</body>
 
+			document.getElementById('roomButton').onclick = async () => {
+				const roomInput = document.getElementById('roomInput')
+				if (roomInput.value === network.roomId) return
+
+				network.destroy()
+				network = await constructNetworkAPI(
+					"wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/",
+					roomInput.value
+				)
+
+				statusRoom.textContent = roomInput.value
+				statusId.textContent   = network.id
+				addEntry(`Joined room: ${roomInput.value}`, 'system')
+
+				network.onmessage = (message) => {
+					const data = JSON.parse(message.data)
+					if (data.direct) {
+						addEntry(`Direct from ${data.from}: ${data.text}`, 'direct')
+					} else {
+						addEntry(`From ${data.from}: ${data.text}`)
+					}
+				}
+			}
+
+			document.getElementById('sendMessage').onclick = () => {
+				const input = document.getElementById('messageInput')
+				if (!input.value.trim()) return
+				network.broadcastObject({ text: input.value })
+				addEntry(`You (broadcast): ${input.value}`, 'system')
+				input.value = ''
+			}
+
+			document.getElementById('messageInput').addEventListener('keydown', e => {
+				if (e.key === 'Enter') document.getElementById('sendMessage').click()
+			})
+
+			document.getElementById('directMessage').onclick = () => {
+				const directInput  = document.getElementById('directInput')
+				const directTarget = document.getElementById('directTarget')
+				try {
+					network.sendObject({ text: directInput.value, direct: true }, directTarget.value)
+					addEntry(`You → ${directTarget.value}: ${directInput.value}`, 'direct')
+					directInput.value = ''
+				} catch (e) {
+					addEntry(`Error: ${e.message}`, 'error')
+				}
+			}
+		}
+
+		init()
+	</script>
+
+</body>
 </html>
