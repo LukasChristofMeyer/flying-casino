@@ -506,7 +506,10 @@ if (!isSolo) {
 				break
 
 			case 'texasHoldEm':
-				receiveGameMessage(msg)
+				if (isHost && ['fold','call','raise'].includes(msg.action))
+					game.receiveAction(msg)
+				else
+					receiveGameMessage(msg)
 				break
 		}
 	}
@@ -530,7 +533,7 @@ if (!isSolo) {
 		players		 = gamePlayers.map(p => pdata(p))
 		const pd		= gamePlayers.map(p => pdata(p))
 		for (let i=1;i<gamePlayers.length;i++)
-			gamePlayers[i].send({type:'holdEmInit', players:pd, playerIndex:i, from:'host'})
+			gamePlayers[i].send({type:'holdEmInit', players:pd, playerIndex:i})
 		game			= new TexasHoldEm(gamePlayers, STARTING_BET)
 		sendToHost = obj => game.receiveAction(obj)
 		initGameView()
