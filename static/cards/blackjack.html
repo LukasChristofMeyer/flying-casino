@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Blackjack – The Flying Casino</title>
+  <link rel="stylesheet" href="../main-page.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:wght@700;900&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="blackjack.css">
+  <script defer type="module" src="blackjack.js"></script>
+</head>
+<body>
+
+  <div id="cursor"></div>
+
+  <div id="lamp">
+    <div id="lamp-cord"></div>
+    <div id="lamp-shade"></div>
+  </div>
+
+  <div id="room">
+    <div id="table-wrap">
+      <div id="rail">
+
+        <div class="cue-stick" id="cue-left"><div class="cue-tip"></div></div>
+        <div class="cue-stick" id="cue-right"><div class="cue-tip"></div></div>
+
+        <div class="pocket tl"></div>
+        <div class="pocket tm"></div>
+        <div class="pocket tr"></div>
+        <div class="pocket bl"></div>
+        <div class="pocket bm"></div>
+        <div class="pocket br"></div>
+
+        <div id="felt">
+          <div class="spot"></div>
+          <div class="baulk-line"></div>
+          <div class="baulk-semi"></div>
+          <div id="chalk"></div>
+
+          <div class="ball bcue"></div>
+          <div class="ball b1"></div>
+          <div class="ball b2"></div>
+          <div class="ball b3"></div>
+          <div class="ball b4"></div>
+          <div class="ball b5"></div>
+          <div class="ball b6"></div>
+          <div class="ball b8"></div>
+          <div class="ball b9"></div>
+          <div class="ball b10"></div>
+          <div class="ball b11"></div>
+          <div class="ball b15"></div>
+
+          <div class="main-container">
+            <div class="main">
+
+              <!-- ── LOBBY ── -->
+              <div id="view-lobby">
+                <div class="lobby-title">Blackjack</div>
+                <div class="lobby-subtitle">vs the Dealer</div>
+                <div class="lobby-btns">
+                  <button class="lobby-btn lobby-btn-start" id="btn-play">▶ Play</button>
+                </div>
+                <br>
+                <a href="../lobby/lobby.html" class="back-link">← Back to Lobby</a>
+              </div>
+
+              <!-- ── GAME ── -->
+              <div id="view-game" class="hidden">
+
+                <div class="game-top-bar">
+                  <a href="../lobby/lobby.html" class="back-link">← Lobby</a>
+                  <div class="round-badge" id="round-label">Blackjack</div>
+                </div>
+
+                <!-- Dealer -->
+                <div class="dealer-section">
+                  <div class="seat-label">Dealer</div>
+                  <div class="seat-cards" id="dealer-cards"></div>
+                  <div class="seat-value" id="dealer-value"></div>
+                </div>
+
+                <div class="felt-divider"></div>
+
+                <!-- Player -->
+                <div class="player-section">
+                  <div class="seat-label" id="player-name-display">You</div>
+                  <div class="seat-cards" id="player-cards"></div>
+                  <div class="seat-value" id="player-value"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-area">
+                  <div class="result-display hidden" id="result-display"></div>
+                  <div class="action-row">
+                    <button class="action-btn btn-hit"  id="btn-hit"  disabled>Hit</button>
+                    <button class="action-btn btn-stay" id="btn-stay" disabled>Stay</button>
+                    <button class="action-btn btn-deal hidden" id="btn-deal">Deal Again</button>
+                  </div>
+                </div>
+
+                <div class="game-log" id="game-log"></div>
+
+              </div><!-- #view-game -->
+
+            </div><!-- .main -->
+          </div><!-- .main-container -->
+
+        </div><!-- #felt -->
+      </div><!-- #rail -->
+    </div><!-- #table-wrap -->
+  </div><!-- #room -->
+
+  <div id="credits">
+    <span id="credits-title">Flying Casino</span>
+    &nbsp;·&nbsp; Free online multiplayer card games &nbsp;·&nbsp; No account required
+    &nbsp;&nbsp;|&nbsp;&nbsp;
+    Lukas Meyer &nbsp;·&nbsp; Lia Smith &nbsp;·&nbsp; Daniel Johnson &nbsp;·&nbsp; Thornton Gray
+  </div>
+</body>
+</html>
