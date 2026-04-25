@@ -2,10 +2,47 @@ import {Deck} from "./deck.js"
 
 
 
-// Would like to officially note this function is poorly made! Refactoring it to make it fancy would be a cool stretch goal.
-// Particularly, it'd be nice if we could return a struct showing exactly what cards made up a hand, like a pair.
-// That would be especially nice considering that the winner of a draw is decided on the value of those cards.
 export function pokerHandType(hand) {
+	var isStraight = false
+
+	{ // Scoped for garbage collection
+		
+		// From highest to lowest
+		let straightenedHand = structuredClone(hand).sort((a,b) => b.value - a.value)
+
+		let lastCard = straightenedHand[0]
+		let count = 0
+		for (const card of straightenedHand) {
+			if (lastCard.value == card.value) {continue}
+
+			if (lastCard.value-1 > card.value) {count = 0; continue}
+			else {
+				count++
+				if (count >= 4) {
+					isStraight = true
+					break
+				}
+			}
+		}
+
+		// Just due to how annoying straight wrap arounds are, and their rarity, I've handled it specially here.
+		if (!isStraight && straightenedHand[0].label == "Ace" && straightenedHand[straightenedHand.length-1].label == "Two") {
+			// As count counted how many led up to the wrap-around, we just do the forEach again but exit instead of resetting.
+			for (const card of straightenedHand) {
+				if (lastCard.value == card.value) {continue}
+
+				if (lastCard.value-1 > card.value) {break}
+				else {
+					count++
+					if (count >= 4) {
+						isStraight = true
+						break
+					}
+				}
+			}
+		}
+	}
+
 	var labelCounts = {
 		"Ace" : 0,
 		"Two" : 0,
@@ -34,29 +71,9 @@ export function pokerHandType(hand) {
 
 	var sortedCount = Object.entries(labelCounts).sort((a,b) => b[1] - a[1])
 
-	// Couldn't be bothered to make a proper algorithm for checking poker hands right now.
-	// The below does work though!
-
-	// I also couldn't be bothered to deal with straights properly... Should not be horrendous as a switch statement, though?
-	var isStraight = false
-	switch (sortedCount[0][0]) {
-		case "Ace": 
-			isStraight = (sortedCount[4][1] == "Five" || sortedCount[4][1] == "Ten") 
-			break
-		case "Two": isStraight = (sortedCount [4][0] == "Six"); break;
-		case "Three": isStraight = (sortedCount [4][0] == "Seven"); break;
-		case "Four": isStraight = (sortedCount [4][0] == "Eight"); break;
-		case "Five": isStraight = (sortedCount [4][0] == "Nine"); break;
-		case "Six": isStraight = (sortedCount [4][0] == "Ten"); break;
-		case "Seven": isStraight = (sortedCount [4][0] == "Jack"); break;
-		case "Eight": isStraight = (sortedCount [4][0] == "Queen"); break;
-		case "Nine": isStraight = (sortedCount [4][0] == "King"); break;
-		default: break;
-	}
-
 
 	if (sortedCount[0][1] >= 5) {return "Five of a Kind"}
-	if (isFlush && isStraight >= 1) {return "Straight Flush"}
+	if (isFlush && isStraight) {return "Straight Flush"}
 	if (sortedCount[0][1] >= 4) {return "Four of a Kind"}
 	if (sortedCount[0][1] >= 3 && sortedCount[1][1] >= 2) {return "Full House"}
 	if (isFlush) {return "Flush"}
@@ -80,12 +97,146 @@ export const pokerHandValueTable = {
 	"Five of a Kind" : 9
 }
 
+export const pokerCardValueTable = {
+	"Ace" : 14,
+	"Two" : 2,
+	"Three" : 3,
+	"Four" : 4,
+	"Five" : 5,
+	"Six" : 6,
+	"Seven" : 7,
+	"Eight" : 8,
+	"Nine" : 9,
+	"Ten" : 10,
+	"Jack" : 11,
+	"Queen" : 12,
+	"King" : 13
+}
+
+
+// My shame. A copy and paste of pokerHandType, but with extra logic to find what makes up our winning hand. 
+// Likely should have made the scoring system in its entirity, with pokerHandType accounting for this
+// But oh well. Having two specific functions for each isn't too egregious anyway
 export function handScore(hand) {
-	var score = 0;
+	var isStraight = 0 // False, or our score.
+
+	// From highest to lowest
+	var straightenedHand = structuredClone(hand).sort((a,b) => b.value - a.value)
+	
+	{ // Scoped for garbage collection
+		let lastCard = straightenedHand[0]
+		let count = 0
+		for (const card of straightenedHand) {
+			if (lastCard.value == card.value) {continue}
+
+			if (lastCard.value-1 > card.value) {count = 0; isStraight = 0; continue}
+			
+			else {
+				count++
+				isStraight += card.value
+				if (count >= 4) {
+					break
+				}
+			}
+		}
+
+		// If we didn't count up to a straight, then we didn't get one, did we?
+		if (count < 4) {isStraight = 0}
+		
+
+		// Just due to how annoying straight wrap arounds are, and their rarity, I've handled it specially here.
+		if (straightenedHand[0].label == "Ace" && straightenedHand[straightenedHand.length-1].label == "Two") {
+			// We have very very annoying logic here as this could be higher than the hand we priorly got,
+			// EX: 7+6+5+4+3 = 25 priorly, but if wrapped could be Ace+2+3+4+5 = 28
+			// Thus, we have to count again, and check if this is bigger than the prior.
+			// This logic is overkill, as in application we only have 2->8 & ace, as the most extreme poker has 8 cards
+			// But I want this function to be entirely robust, just in case. 
+			let isStraightWrapAround = 0
+			let wrapAroundCount = 0
+			let wrapAroundLastCard = straightenedHand[0]
+
+			// We first see how many the larger cards we have
+			for (const card of straightenedHand) {
+				if (lastCard.value == card.value) {continue}
+
+				if (lastCard.value-1 > card.value) {break}
+
+				else {
+					wrapAroundCount++
+					isStraightWrapAround += card.value
+				}
+			}
+
+			// Then, we check the smallest cards we have
+			let reversedStraight = structuredClone(straightenedHand).reverse()
+			let wrapAroundLastCard2 = reversedStraight[0]
+			for (const card of reversedStraight) {
+				if (lastCard.value == card.value) {continue}
+
+				if (lastCard.value+1 < card.value) {break}
+				else {
+					wrapAroundCount++
+					isStraightWrapAround += card.value
+					if (wrapAroundCount >= 4) {
+						break
+					}
+				}				
+			}
+
+			if (isStraightWrapAround > isStraight) {isStraight = isStraightWrapAround}
+		}
+	}
+
+	var labelCounts = {
+		"Ace" : 0,
+		"Two" : 0,
+		"Three" : 0,
+		"Four" : 0,
+		"Five" : 0,
+		"Six" : 0,
+		"Seven" : 0,
+		"Eight" : 0,
+		"Nine" : 0,
+		"Ten" : 0,
+		"Jack" : 0,
+		"Queen" : 0,
+		"King" : 0
+	}
+
+	var isFlush = true
+	var lastCard = hand[0]
+	
 	hand.forEach(card => {
-		score = score + card.value
+		labelCounts[card.label]++
+
+		// Checks both for a hopeful minor efficiency gain, since checking it isn't a flush is quick and likely
+		if (isFlush && lastCard.suit != card.suit) {isFlush = false}
+		lastCard = card
 	});
-	return score
+
+	var sortedCount = Object.entries(labelCounts).sort((a,b) => b[1] - a[1])
+
+
+	if (sortedCount[0][1] >= 5) {return (pokerCardValueTable[sortedCount[0][0]]*5)} // Five of a kind
+	if (isFlush && isStraight > 0) {return isStraight} // Straight Flush
+	if (sortedCount[0][1] >= 4) {return (pokerCardValueTable[sortedCount[0][0]]*4)} // Four of a kind
+	if (sortedCount[0][1] >= 3 && sortedCount[1][1] >= 2) { // Full house
+		return ((pokerCardValueTable[sortedCount[0][0]]*3) + (pokerCardValueTable[sortedCount[1][0]]*2))
+	}
+	if (isFlush) { // Flush
+		let score = 0
+		for (let i = 0; i < 5; i++) { // Get the five highest cards
+			count += straightenedHand[i].value
+		}
+		return score
+	}
+	if (isStraight > 0) {return isStraight} // Straight
+	if (sortedCount[0][1] >= 3) {return (pokerCardValueTable[sortedCount[0][0]]*3)} // Three of a kind
+	if (sortedCount[0][1] >= 2 && sortedCount[1][1] >= 2) { // Two pair
+		((pokerCardValueTable[sortedCount[0][0]]*3) + (pokerCardValueTable[sortedCount[1][0]]*2))
+	}
+	if (sortedCount[0][1] >= 2) {return (pokerCardValueTable[sortedCount[0][0]]*2)} // Pair
+	return (pokerCardValueTable[sortedCount[0][0]]) // High card
 }
 
 // Class to be extended for any individual poker game.
@@ -987,6 +1138,21 @@ export class TexasHoldEmHTMLHandler {
 	}
 }
 
+
+
+// RoyalHoldEm is TexasHoldEm, but with only tens, jacks, queens, kings, and aces.
+// Source: https://en.wikipedia.org/wiki/Community_card_poker#Royal_hold_'em
+export class RoyalHoldEm extends TexasHoldEm {
+	constructor() {
+		super()
+		this.cards = [this.AS, this.TenS, this.JS, this.QS, this.KS, this.AH, this.TenH, this.JH, this.QH, this.KH, this.AC, this.TenC, this.JC, this.QC, this.KC, this.AD, this.TenD, this.JD, this.QD, this.KD];
+	}
+
+	reset() {
+		this.cards = [this.AS, this.TenS, this.JS, this.QS, this.KS, this.AH, this.TenH, this.JH, this.QH, this.KH, this.AC, this.TenC, this.JC, this.QC, this.KC, this.AD, this.TenD, this.JD, this.QD, this.KD];
+	}
+}
+ 
 
 
 export class Player {
