@@ -66,7 +66,7 @@ class PokerAI extends Player {
 
 const playerData = retrievePlayerData()
 let myName = playerData?.getName?.() || ''
-if (!myName || myName === 'unnamed') myName = ''
+if (!myName || myName === 'unnamed') myName = 'Player'
 
 // ── State ──────────────────────────────────────────────────────────────────
 let network, game, sendToHost
@@ -93,22 +93,13 @@ const btnCall			= document.getElementById('btn-call')
 const btnRaise		 = document.getElementById('btn-raise')
 const raiseInput	 = document.getElementById('raise-input')
 const btnNext			= document.getElementById('btn-next-round')
-const nameInputEl	= document.getElementById('name-input')
 const oppRow			 = document.getElementById('opponents-row')
 const commCardsEl	= document.getElementById('community-cards')
 const yourTurnHint = document.getElementById('your-turn-hint')
 
-// ── Name ───────────────────────────────────────────────────────────────────
-nameInputEl.value = myName
-function syncName() {
-	const n = nameInputEl.value.trim()
-	myName = n || 'Player'
-	localStorage.setItem('fcp_name', myName)
-	const s = document.getElementById('lobby-self-name')
-	if (s) s.textContent = myName
-}
-nameInputEl.addEventListener('input', syncName)
-nameInputEl.addEventListener('blur',	syncName)
+// update lobby self-name display once DOM is ready
+const lobbyS = document.getElementById('lobby-self-name')
+if (lobbyS) lobbyS.textContent = myName
 
 // ── Card rendering ─────────────────────────────────────────────────────────
 const SUIT_SYM		= { Heart:'♥', Diamond:'♦', Club:'♣', Spade:'♠' }

@@ -17,6 +17,7 @@ const GAME_LABELS = {
 const GAME_PAGES = {
 	'video-poker': '../cards/video-poker.html',
 	'holdem':      '../cards/holdem.html',
+	'blackjack':   '../cards/blackjack.html',
 };
 
 /** Reads a list of rooms from the API as an array of room objects
