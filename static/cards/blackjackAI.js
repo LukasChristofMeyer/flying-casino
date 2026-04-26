@@ -1,8 +1,10 @@
 import {BlackjackHTMLHandler, Player} from "./blackjack.js"
+
 class BlackJackAI extends Player {
     AIIndex;
 
     constructor (index) {
+        super(msg => {})
         this.AIIndex = index;
     }
 

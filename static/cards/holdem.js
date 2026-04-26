@@ -433,7 +433,6 @@ if (isSolo) {
 	addLobbyEntry(myName||'Player', STARTING_CHIPS, true)
 
 	document.getElementById('btn-play-solo').onclick = () => {
-		syncName()
 		isHost = true; myPlayerIndex = 0; playerCount = 2
 
 		const me = new Player(obj => receiveGameMessage(obj))
@@ -507,7 +506,6 @@ if (!isSolo) {
 
 	btnCreate.onclick = () => {
 		if (isHost||hostId) return
-		syncName()
 		isHost=true; btnCreate.disabled=true; gamePlayers=[]
 		myPlayerIndex=0
 		const me = new Player(obj => receiveGameMessage(obj))
