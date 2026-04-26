@@ -28,6 +28,11 @@ npm install
 
 **Please don't upload your node-modules folder! Delete it before adding changes!**
 
+To ensure any changes you make are valid, navigate to the root directory and run
+```
+npm test
+```
+
 To run the project locally, first run the webserver:
 ```
 node webserver.js
