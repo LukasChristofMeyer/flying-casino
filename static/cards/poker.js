@@ -3,46 +3,6 @@ import {Deck} from "./deck.js"
 
 
 export function pokerHandType(hand) {
-	var isStraight = false
-
-	{ // Scoped for garbage collection
-		
-		// From highest to lowest
-		let straightenedHand = structuredClone(hand).sort((a,b) => b.value - a.value)
-
-		let lastCard = straightenedHand[0]
-		let count = 0
-		for (const card of straightenedHand) {
-			if (lastCard.value == card.value) {continue}
-
-			if (lastCard.value-1 > card.value) {count = 0; continue}
-			else {
-				count++
-				if (count >= 4) {
-					isStraight = true
-					break
-				}
-			}
-		}
-
-		// Just due to how annoying straight wrap arounds are, and their rarity, I've handled it specially here.
-		if (!isStraight && straightenedHand[0].label == "Ace" && straightenedHand[straightenedHand.length-1].label == "Two") {
-			// As count counted how many led up to the wrap-around, we just do the forEach again but exit instead of resetting.
-			for (const card of straightenedHand) {
-				if (lastCard.value == card.value) {continue}
-
-				if (lastCard.value-1 > card.value) {break}
-				else {
-					count++
-					if (count >= 4) {
-						isStraight = true
-						break
-					}
-				}
-			}
-		}
-	}
-
 	var labelCounts = {
 		"Ace" : 0,
 		"Two" : 0,
@@ -58,19 +18,83 @@ export function pokerHandType(hand) {
 		"Queen" : 0,
 		"King" : 0
 	}
-	var isFlush = true
-	var lastCard = hand[0]
+
+	var suitCounts = {
+		"Spade": [],
+		"Heart": [],
+		"Club": [],
+		"Diamond": []
+	}
 	
 	hand.forEach(card => {
 		labelCounts[card.label]++
-
-		// Checks both for a hopeful minor efficiency gain, since checking it isn't a flush is quick and likely
-		if (isFlush && lastCard.suit != card.suit) {isFlush = false}
-		lastCard = card
+		suitCounts[card.suit].push(card)
 	});
 
 	var sortedCount = Object.entries(labelCounts).sort((a,b) => b[1] - a[1])
+	
 
+
+	var isStraight = false
+	var isFlush = false
+
+	let handsToStraighten = []
+	// If we have a flush, then we only care if straights are flushes.
+	for (const validSuit of Object.entries(suitCounts)) {
+		if (validSuit[1].length >= 5) {
+			isFlush = true
+			handsToStraighten.push(validSuit[1])
+		}
+	}
+
+	// If we don't have flushes, we care about our hand.
+	if (handsToStraighten.length == 0) {handsToStraighten.push(hand)}
+
+	for (const handToStraighten of handsToStraighten) {
+		var count = 0
+		// From highest to lowest
+		let straightenedHand = [...handToStraighten].sort((a,b) => b.value - a.value)
+		
+		let lastCard = straightenedHand[0]
+		for (const card of straightenedHand) {
+			if (lastCard.value == card.value) {lastCard = card; continue}
+
+			if (lastCard.value-1 != card.value) {count = 0; lastCard = card; continue}
+			else {
+				count++
+				if (count >= 4) {
+					isStraight = true
+					break
+				}
+			}
+			lastCard = card
+		}
+		
+		// Just due to how annoying straight wrap arounds are, and their rarity, I've handled it specially here.
+		if (!isStraight && straightenedHand[0].label == "Ace" && straightenedHand[straightenedHand.length-1].label == "Two") {
+			lastCard = straightenedHand[0]
+			count++ // Because by definition we have an extra Ace now
+			if (count >= 4) {
+				isStraight = true
+				break
+			}
+			
+			// As count counted how many led up to the wrap-around, we just do the forEach again but exit instead of resetting.
+			for (const card of straightenedHand) {
+				if (lastCard.value == card.value) {lastCard = card; continue}
+
+				if (lastCard.value-1 != card.value) {break}
+				else {
+					count++
+					if (count >= 4) {
+						isStraight = true
+						break
+					}
+				}
+				lastCard = card
+			}
+		}
+	}
 
 	if (sortedCount[0][1] >= 5) {return "Five of a Kind"}
 	if (isFlush && isStraight) {return "Straight Flush"}
@@ -118,75 +142,6 @@ export const pokerCardValueTable = {
 // Likely should have made the scoring system in its entirity, with pokerHandType accounting for this
 // But oh well. Having two specific functions for each isn't too egregious anyway
 export function handScore(hand) {
-	var isStraight = 0 // False, or our score.
-
-	// From highest to lowest
-	var straightenedHand = structuredClone(hand).sort((a,b) => b.value - a.value)
-	
-	{ // Scoped for garbage collection
-		let lastCard = straightenedHand[0]
-		let count = 0
-		for (const card of straightenedHand) {
-			if (lastCard.value == card.value) {continue}
-
-			if (lastCard.value-1 > card.value) {count = 0; isStraight = 0; continue}
-			
-			else {
-				count++
-				isStraight += card.value
-				if (count >= 4) {
-					break
-				}
-			}
-		}
-
-		// If we didn't count up to a straight, then we didn't get one, did we?
-		if (count < 4) {isStraight = 0}
-		
-
-		// Just due to how annoying straight wrap arounds are, and their rarity, I've handled it specially here.
-		if (straightenedHand[0].label == "Ace" && straightenedHand[straightenedHand.length-1].label == "Two") {
-			// We have very very annoying logic here as this could be higher than the hand we priorly got,
-			// EX: 7+6+5+4+3 = 25 priorly, but if wrapped could be Ace+2+3+4+5 = 28
-			// Thus, we have to count again, and check if this is bigger than the prior.
-			// This logic is overkill, as in application we only have 2->8 & ace, as the most extreme poker has 8 cards
-			// But I want this function to be entirely robust, just in case. 
-			let isStraightWrapAround = 0
-			let wrapAroundCount = 0
-			let wrapAroundLastCard = straightenedHand[0]
-
-			// We first see how many the larger cards we have
-			for (const card of straightenedHand) {
-				if (lastCard.value == card.value) {continue}
-
-				if (lastCard.value-1 > card.value) {break}
-
-				else {
-					wrapAroundCount++
-					isStraightWrapAround += card.value
-				}
-			}
-
-			// Then, we check the smallest cards we have
-			let reversedStraight = structuredClone(straightenedHand).reverse()
-			let wrapAroundLastCard2 = reversedStraight[0]
-			for (const card of reversedStraight) {
-				if (lastCard.value == card.value) {continue}
-
-				if (lastCard.value+1 < card.value) {break}
-				else {
-					wrapAroundCount++
-					isStraightWrapAround += card.value
-					if (wrapAroundCount >= 4) {
-						break
-					}
-				}				
-			}
-
-			if (isStraightWrapAround > isStraight) {isStraight = isStraightWrapAround}
-		}
-	}
-
 	var labelCounts = {
 		"Ace" : 0,
 		"Two" : 0,
@@ -203,19 +158,106 @@ export function handScore(hand) {
 		"King" : 0
 	}
 
-	var isFlush = true
-	var lastCard = hand[0]
+	var suitCounts = {
+		"Spade": [],
+		"Heart": [],
+		"Club": [],
+		"Diamond": []
+	}
 	
 	hand.forEach(card => {
 		labelCounts[card.label]++
-
-		// Checks both for a hopeful minor efficiency gain, since checking it isn't a flush is quick and likely
-		if (isFlush && lastCard.suit != card.suit) {isFlush = false}
-		lastCard = card
+		suitCounts[card.suit].push(card)
 	});
 
-	var sortedCount = Object.entries(labelCounts).sort((a,b) => b[1] - a[1])
+	var sortedCount = Object.entries(labelCounts).sort((a,b) =>
+		b[1] - a[1]
+		|| pokerCardValueTable[b[0]] - pokerCardValueTable[a[0]] // If equal, what has more value?
+	)
+	
+	var handsToStraighten = []
+	// If we have a flush, then we only care if straights are flushes.
+	var isFlush = false
+	for (const validSuit of Object.entries(suitCounts)) {
+		if (validSuit[1].length >= 5) {
+			handsToStraighten.push(validSuit[1])
+			isFlush = true
+		}
+	}
+	if (handsToStraighten.length == 0) {handsToStraighten.push(hand)}
 
+
+	var isStraight = 0 // False, or our score.
+	for (const handToStraighten of handsToStraighten) {
+		let straightenedHand = [...handToStraighten].sort((a,b) => b.value - a.value)
+		let lastCard = straightenedHand[0]
+		let notWrappedisStraight = lastCard.value
+		let count = 0
+		for (const card of straightenedHand) {
+			if (lastCard.value == card.value) {lastCard = card; continue}
+
+			if (lastCard.value-1 != card.value) {count = 0; notWrappedisStraight = card.value; lastCard = card; continue}
+			
+			count++
+			notWrappedisStraight += card.value
+			if (count >= 4) {
+				break
+			}
+
+			lastCard = card
+		}
+
+		// If we didn't count up to a straight, then we didn't get one, did we?
+		if (count < 4) {notWrappedisStraight = 0}
+		
+		// Just due to how annoying straight wrap arounds are, and their rarity, I've handled it specially here.
+		if (straightenedHand[0].label == "Ace" && straightenedHand[straightenedHand.length-1].label == "Two") {
+			// We have very very annoying logic here as this could be higher than the hand we priorly got,
+			// EX: 7+6+5+4+3 = 25 priorly, but if wrapped could be Ace+2+3+4+5 = 28
+			// Thus, we have to count again, and check if this is bigger than the prior.
+			// This logic is overkill, as in application we only have 2->8 & ace, as the most extreme poker has 8 cards
+			// But I want this function to be entirely robust, just in case. 
+			let wrapAroundCount = 0
+			let wrapAroundLastCard = straightenedHand[0]
+			let isStraightWrapAround = straightenedHand[0].value
+
+			// We first see how many the larger cards we have
+			for (const card of straightenedHand) {
+				if (wrapAroundLastCard.value == card.value) {wrapAroundLastCard = card; continue}
+
+				if (wrapAroundLastCard.value-1 != card.value) {break}
+				
+				wrapAroundCount++
+				isStraightWrapAround += card.value
+
+				wrapAroundLastCard = card
+			}
+
+			// Then, we check the smallest cards we have
+			let reversedStraight = structuredClone(straightenedHand).reverse()
+			let wrapAroundLastCard2 = reversedStraight[0]
+			wrapAroundCount++
+			isStraightWrapAround += wrapAroundLastCard2.value
+
+			for (const card of reversedStraight) {
+				if (wrapAroundLastCard2.value == card.value) {wrapAroundLastCard2 = card; continue}
+
+				if (wrapAroundLastCard2.value+1 != card.value) {break}
+				
+				wrapAroundCount++
+				isStraightWrapAround += card.value
+				if (wrapAroundCount >= 4) {
+					break
+				}
+				wrapAroundLastCard2 = card
+			}
+			
+			if (wrapAroundCount < 4) {isStraightWrapAround = 0}
+
+			if (isStraightWrapAround > notWrappedisStraight) {isStraight = isStraightWrapAround}
+		}
+		if (notWrappedisStraight > isStraight) {isStraight = notWrappedisStraight}
+	}
 
 	if (sortedCount[0][1] >= 5) {return (pokerCardValueTable[sortedCount[0][0]]*5)} // Five of a kind
 	if (isFlush && isStraight > 0) {return isStraight} // Straight Flush
@@ -223,21 +265,34 @@ export function handScore(hand) {
 	if (sortedCount[0][1] >= 3 && sortedCount[1][1] >= 2) { // Full house
 		return ((pokerCardValueTable[sortedCount[0][0]]*3) + (pokerCardValueTable[sortedCount[1][0]]*2))
 	}
+
 	if (isFlush) { // Flush
 		let score = 0
-		for (let i = 0; i < 5; i++) { // Get the five highest cards
-			count += straightenedHand[i].value
+		for (const handToStraighten of handsToStraighten) { // If isFlush, handsToStraighten is flush cards
+			let straightenedHand = structuredClone(hand).sort((a,b) => b.value - a.value)
+			let newScore = 0
+			let i = 0
+			for (const card of straightenedHand) {
+				i++
+				newScore += card.value
+				if (i >= 5) {break}
+			}
+			if (newScore > score) {score = newScore}
 		}
 		return score
 	}
+
 	if (isStraight > 0) {return isStraight} // Straight
 	if (sortedCount[0][1] >= 3) {return (pokerCardValueTable[sortedCount[0][0]]*3)} // Three of a kind
 	if (sortedCount[0][1] >= 2 && sortedCount[1][1] >= 2) { // Two pair
-		((pokerCardValueTable[sortedCount[0][0]]*3) + (pokerCardValueTable[sortedCount[1][0]]*2))
+		return ((pokerCardValueTable[sortedCount[0][0]]*2) + (pokerCardValueTable[sortedCount[1][0]]*2))
 	}
 	if (sortedCount[0][1] >= 2) {return (pokerCardValueTable[sortedCount[0][0]]*2)} // Pair
 	return (pokerCardValueTable[sortedCount[0][0]]) // High card
 }
+
+
+
 
 // Class to be extended for any individual poker game.
 // Thus, it mainly handles Poker values 
