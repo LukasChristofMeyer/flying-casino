@@ -1067,6 +1067,7 @@ export class TexasHoldEmHTMLHandler {
 
 
 	renderHand(hand) {
+		this.hand.innerHTML = ""
 		for (let i = 0; i < hand.length; i++) {
 			const card = this.document.createElement("li")
 			card.classList.add("card")
@@ -1256,7 +1257,8 @@ export class FiveCardDraw extends Poker {
 	receiveAction(actionObject) {
 		switch(actionObject.action) {
 			case "discard":
-				this.playerDiscard(actionObject.playerIndex, cardsToDiscard)
+				this.playerDiscard(actionObject.playerIndex, actionObject.cardsToDiscard)
+				break
 			case "raise":
 				this.playerRaise(actionObject.playerIndex, actionObject.raise)
 				break
@@ -1276,7 +1278,6 @@ export class FiveCardDraw extends Poker {
 			currentBet: this.#currentBet,
 			players: this.#players,
 			toPlay: this.#toPlayIndex,
-			communityCards: this.communityCards
 		}
 	}
 
@@ -1289,7 +1290,7 @@ export class FiveCardDraw extends Poker {
 				action: "showHand",
 				ownerIndex: i,
 				player: this.#players[i],
-				handType: pokerHandType([...this.#players[i].hand, ...this.communityCards])
+				handType: pokerHandType([...this.#players[i].hand])
 			})
 		}
 	}
@@ -1378,7 +1379,7 @@ export class FiveCardDraw extends Poker {
 	}
 
 	#nextTurn() {
-		if (this.#round === 1) {return}
+		if (this.#round == 1) {return}
 		do {
 			if (this.#toPlayIndex == this.#players.length-1) {
 				this.#toPlayIndex = 0
@@ -1430,32 +1431,32 @@ export class FiveCardDraw extends Poker {
 
 	playerDiscard(playerIndex, cardsToDiscard) {
 		// We do not care about turns when discarding. We just wait until everyone has discarded
-		if (players[playerIndex].state != "discarded" && players[playerIndex].state != "folded" && this.round == 1) {
+		if (this.#players[playerIndex].state != "discarded" && this.#players[playerIndex].state != "folded" && this.#round == 1) {
 			for (const index of cardsToDiscard) {
 				this.#players[playerIndex].hand[index] = this.cards.pop()
 			}
 
-			players[playerIndex].state = "discarded"
+			this.#players[playerIndex].state = "discarded"
 
-			this.#players[i].send({
+			this.#players[playerIndex].send({
 				type: "fiveCardDraw",
 				action: "giveHand",
 				hand: [
 					{
-						label: this.#players[i].hand[0].label,
-						suit: this.#players[i].hand[0].suit
+						label: this.#players[playerIndex].hand[0].label,
+						suit: this.#players[playerIndex].hand[0].suit
 					}, {
-						label: this.#players[i].hand[1].label,
-						suit: this.#players[i].hand[1].suit
+						label: this.#players[playerIndex].hand[1].label,
+						suit: this.#players[playerIndex].hand[1].suit
 					}, {
-						label: this.#players[i].hand[2].label,
-						suit: this.#players[i].hand[2].suit
+						label: this.#players[playerIndex].hand[2].label,
+						suit: this.#players[playerIndex].hand[2].suit
 					}, {
-						label: this.#players[i].hand[3].label,
-						suit: this.#players[i].hand[3].suit
+						label: this.#players[playerIndex].hand[3].label,
+						suit: this.#players[playerIndex].hand[3].suit
 					}, {
-						label: this.#players[i].hand[4].label,
-						suit: this.#players[i].hand[4].suit
+						label: this.#players[playerIndex].hand[4].label,
+						suit: this.#players[playerIndex].hand[4].suit
 					},
 				]
 			})
@@ -1469,19 +1470,23 @@ export class FiveCardDraw extends Poker {
 			})
 
 
-			for (player of this.#players) {
-				if (player.state != "folded" || player.state != "discarded") {
+			for (const player of this.#players) {
+				if (player.state != "folded" && player.state != "discarded") {
 					return
 				}
 			}
 			// If that for loop did not exit, then everyone has either discarded or folded. Thus, its onto the next turn!
 			this.#round = 2
-			this.#nextTurn()
+			this.#sendToAllPlayers({
+				type: "fiveCardDraw",
+				action: "nextTurn",
+				toPlay: this.#toPlayIndex
+			})
 		}
 	}
 
 	playerRaise(playerIndex, raise) {
-		if (playerIndex == this.#toPlayIndex) {
+		if (playerIndex == this.#toPlayIndex && this.#round != 1) {
 			var player = this.#players[playerIndex]
 			if (player.state != "folded") {
 				this.#pot.raise(player, raise)
@@ -1502,12 +1507,11 @@ export class FiveCardDraw extends Poker {
 	}
 
 	playerCall(playerIndex) { 
-		if (playerIndex == this.#toPlayIndex) {
+		if (playerIndex == this.#toPlayIndex && this.#round != 1) {
 			var player = this.#players[playerIndex]
 			if (player.state != "folded") {
 				this.#pot.call(player)
 				player.state = "called"
-
 
 				this.#sendToAllPlayers({
 					type: "fiveCardDraw",
@@ -1522,7 +1526,7 @@ export class FiveCardDraw extends Poker {
 	}
 
 	playerFold(playerIndex) {
-		if (playerIndex == this.#toPlayIndex) {
+		if (playerIndex == this.#toPlayIndex && this.#round != 1) {
 			this.#players[playerIndex].state = "folded"
 
 			this.#sendToAllPlayers({
@@ -1578,6 +1582,9 @@ export class FiveCardDrawHTMLHandler {
 	) {
 		container.insertAdjacentHTML("beforeend", fiveCardDrawHTML)
 
+
+		this.sendToHost = sendToHost
+
 		this.document = document
 		this.currentChips = document.getElementById("fiveCardDrawCurrentChips")
 		this.betInput = document.getElementById("fiveCardDrawRaiseInput")
@@ -1606,9 +1613,9 @@ export class FiveCardDrawHTMLHandler {
 		// The deal button is called only when it is time to discard cards after the first betting round
 		this.discardButton.onclick = () => {
 			const cards = this.hand.querySelectorAll("li")
-			let cardsToDiscard = []
-			for (card of cards) { // Find all cards we selected to discard
-				if (card.dataset.selected = "TRUE") {
+			var cardsToDiscard = []
+			for (const card of cards) { // Find all cards we selected to discard
+				if (card.dataset.selected == "TRUE") {
 					cardsToDiscard.push(card.dataset.index)
 				}
 			}
@@ -1656,6 +1663,7 @@ export class FiveCardDrawHTMLHandler {
 
 
 	renderHand(hand) {
+		this.hand.innerHTML = ""
 		for (let i = 0; i < hand.length; i++) {
 			const card = this.document.createElement("li")
 			card.classList.add("card")
@@ -1711,6 +1719,14 @@ export class FiveCardDrawHTMLHandler {
 				}
 				break
 
+			case "revealedWinners": {
+				actionObject.winners.forEach(winner => {
+					const p = this.document.createElement("p")
+					p.innerText = p.innerText + winner.name + " won!\n"
+					this.gameOutput.appendChild(p)
+				})
+			} break
+
 			case "showHand": {
 				const p = this.document.createElement("p")
 				p.innerText = actionObject.player.name + " had " + actionObject.player.hand[0].label + " " + actionObject.player.hand[0].suit
@@ -1718,6 +1734,14 @@ export class FiveCardDrawHTMLHandler {
 
 				this.gameOutput.appendChild(p)
 				this.updatePlayerBalance(actionObject.ownerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "discardTurn": {
+				const p = this.document.createElement("p")
+				p.innerText = "It is everyones turn to discard!" 
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "discarded")
 			} break
 
 			case "playerDiscarded": {

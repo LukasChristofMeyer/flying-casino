@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="fiveCardDraw-demo.css">
+<body>
+	<main>
+		<span id="chips">100</span>
+		<button id="createGame">Create game</button>
+		<button id="startGame" disabled>Start game</button>
+		<div id="gameSpace"></div>
+
+		<div id="messageBox">
+			<p>Messages received:</p>
+		</div>
+	</main>
+
+	<script type = "module">
+		import { FiveCardDraw, FiveCardDrawHTMLHandler, Player } from "./poker.js"
+		import { constructNetworkAPI } from "../network/network.js"
+		import { signalServerAddress } from "../flying-casino.js"
+
+		const gameSpace = document.getElementById("gameSpace")
+		const createGame = document.getElementById("createGame")
+		const startGame = document.getElementById("startGame")
+		const chips = document.getElementById("chips")
+		const messages = document.getElementById("messageBox")
+		
+		var htmlHandler = null
+		var network = await constructNetworkAPI(signalServerAddress)
+
+		var hostID = 0 // Luckily, you cannot generate a UUID of 0!.. I think.
+		var fiveCardDrawPlayers = []
+		var game = null
+
+		network.onmessage = (message) => {
+			let messageObject = JSON.parse(message.data)
+			switch (messageObject.type) {
+				case "gameStart": {
+					if (!hostID) { // If we have no host 
+						hostID = messageObject.from // I guess you're the host, then?
+						
+						createGame.disabled = true
+						network.broadcastObject({ // Here's what you'll need to know about me!
+							type: "joinGame",
+							chips: chips.textContent
+						})
+						// This needs to be done more properly by account stuff.
+						// Right now, the logic is that you gave the chips, and so do not have them.
+						chips.textContent = 0
+					}
+				} break
+
+				case "joinGame": { // Someone joined our game
+					const player = new Player((object) => network.sendObject(object, messageObject.from))
+					player.chipsRemaining = messageObject.chips
+					player.name = messageObject.from
+					fiveCardDrawPlayers.push(player)
+
+					const p = document.createElement("p")
+					p.innerText = "Joined game: " + messageObject.from
+					messages.appendChild(p)
+
+				} break
+
+				case "fiveCardDrawInit": {
+					htmlHandler = new FiveCardDrawHTMLHandler(
+						document, gameSpace, 
+						// Do not fear messageObject.players not having a .send due to losing it from JSON: htmlHandler just wants to render them
+						messageObject.players,
+						messageObject.playerIndex, 
+						(object) => network.sendObject(object, messageObject.from)
+					)
+				} break
+
+				case "fiveCardDraw":
+					htmlHandler.receiveAction(messageObject)
+					break
+
+				// Need to likely have a case here which rewards chips back, which is .send() .
+				// I'll leave that to account stuff!
+				// Or I suppose just grab it from your own HTMLHandler, since your currentChips there is what you'd grab here.
+
+			}
+		}
+
+
+
+		createGame.onclick = () => {
+			fiveCardDrawPlayers = []
+			{ // Should instantly go out of scope, though that shouldn't matter.
+				// If we send actions, we send them to ourselves, and these are always just for rendering, so we send them to the htmlHandler
+				const me = new Player((object) => htmlHandler.receiveAction(object)) 
+
+				me.chipsRemaining = chips.textContent 
+				chips.textContent = 0 // See network.onmessage type = "gameStart" for why this is kinda weird
+				me.name = "host"
+				fiveCardDrawPlayers.push(me)
+			}
+
+			// Demands that we are the host, and that everybody joins!
+			// Really really bad, since a new player can join and demand it, and not have a good experience doing so.
+			// Host stuff really should be done by NetworkingAPI itself, or something similar, as it could do it much better. 
+			// However, this is a demo for texasHoldEm, not necessarily for networking, so I've slapped this together!
+			network.broadcastObject({type: "gameStart"})
+			createGame.disabled = true
+			startGame.disabled = false
+		}
+
+		startGame.onclick = () => { // We start the game
+			game = new FiveCardDraw(fiveCardDrawPlayers)
+			htmlHandler = new FiveCardDrawHTMLHandler(document, gameSpace, fiveCardDrawPlayers, 0, (object) => game.receiveAction(object))
+
+			// Give all players what they need to know to exist.
+			for (let i = 1; i < fiveCardDrawPlayers.length; i++) {
+				fiveCardDrawPlayers[i].send({
+					type: "fiveCardDrawInit",
+					players: fiveCardDrawPlayers,
+					playerIndex: i
+				})
+			}
+			game.ante(1)
+		}
+
+
+	</script>
+</body>
+
+</html>
