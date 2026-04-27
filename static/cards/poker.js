@@ -487,6 +487,10 @@ export class VideoPokerHTMLHandler {
 }
 
 
+
+
+
+
 // Though maybe self-evident, to help understanding, note that Pot exists primarily due to the fact someone can run out of chips.
 // If someone raises when someone has gone all-in, then the all-in person has an issue in that they cannot dedicate more chips to call.
 // In this case then, raises have to go into another sidePot, which the all-in does not get the winnings of since they did not dedicate to it.
@@ -622,6 +626,8 @@ export class Pot {
 		this.#players = null
 	}
 }
+
+
 
 
 // If you want a reference, I recommend: https://www.youtube.com/watch?v=DUzoLS4tnUM
@@ -850,7 +856,7 @@ export class TexasHoldEm extends Poker {
 					}
 				}
 
-				if (!this.#raised) { // If we hadn't raised and new a round of betting, we move onto the next game state
+				if (!this.#raised) { // If we hadn't raised and have a new round of betting, we move onto the next game state
 					switch (this.#round) {
 						case 0:
 							this.#flop()
@@ -1211,5 +1217,558 @@ export class Player {
 	
 	constructor(sendFunction) {
 		this.send = sendFunction
+	}
+}
+
+
+
+
+// Decent reference here: https://en.wikipedia.org/wiki/Five-card_draw
+// Note I have chosen to not have limits on how many cards you can discard at a time. That is to my knowledge a house rule.
+// It's pretty much just VideoPoker, but with two betting rounds; one after the first draw, one after the discard.
+export class FiveCardDraw extends Poker {
+	#pot
+	#players
+	#currentBet
+	#toPlayIndex
+	#firstToPlayIndex = 0 // Index of the first player in a betting round.
+	#raised = false // AKA, if everyone hasn't called or folded, and so if a betting round is over we need to go again.
+	#round = 0 // 0 = discard, 1 = final betting round, 2 = game over!
+
+	// Like texas hold em, assumes a players array with .chipsRemaining, .chipsBet, .send(), and .state
+	// We will also give them a .hand at their leisure.
+	// .state has an extra state this time, which is "discarded" for the discard round.
+	// Thus, like texas hold em, also make this class and the players array per game. We're gonna mess 'em up!
+	constructor (players, currentBet = 10) {
+		super(5)
+
+		this.#players = players
+		this.#currentBet = currentBet
+		this.#pot = new Pot(this.#players, currentBet)
+	}
+
+	#sendToAllPlayers(object) {
+		this.#players.forEach(player => {
+			player.send(object)
+		});
+	}
+
+	receiveAction(actionObject) {
+		switch(actionObject.action) {
+			case "discard":
+				this.playerDiscard(actionObject.playerIndex, cardsToDiscard)
+			case "raise":
+				this.playerRaise(actionObject.playerIndex, actionObject.raise)
+				break
+			case "call":
+				this.playerCall(actionObject.playerIndex)
+				break
+			case "fold":
+				this.playerFold(actionObject.playerIndex)
+				break
+		}
+	}
+
+	getGameState() {
+		return {
+			type: "fiveCardDraw",
+			action: "gameState",
+			currentBet: this.#currentBet,
+			players: this.#players,
+			toPlay: this.#toPlayIndex,
+			communityCards: this.communityCards
+		}
+	}
+
+
+
+	cardReveals() {
+		for (let i = 0; i < this.#players.length; i++) {
+			this.#sendToAllPlayers({
+				type: "fiveCardDraw",
+				action: "showHand",
+				ownerIndex: i,
+				player: this.#players[i],
+				handType: pokerHandType([...this.#players[i].hand, ...this.communityCards])
+			})
+		}
+	}
+
+	endGame() {
+		var winners = []
+		winners[0]= {hand: false}
+
+		for (let i = 0; i < this.#players.length; i++) {
+			if (this.#players[i].state == "folded") {continue}
+			if (!winners[0].hand) {winners[0] = this.#players[i]; continue}
+
+			let fullHand = [...this.#players[i].hand]
+			let lastFullhand = [...winners[0].hand]
+
+			if (pokerHandValueTable[pokerHandType(fullHand)] > pokerHandValueTable[pokerHandType(lastFullhand)]) {
+				winners = []
+				winners[0] = this.#players[i]
+			}
+
+			else if (pokerHandValueTable[pokerHandType(fullHand)] == pokerHandValueTable[pokerHandType(lastFullhand)]) {
+				if (handScore(fullHand) > handScore(lastFullhand)) {
+					winners = []
+					winners[0] = this.#players[i]
+				} else if (handScore(fullHand) == handScore(lastFullhand)) {
+					winners.push(this.#players[i])
+				}
+			}
+		}
+		this.#pot.reward(winners)
+
+		this.cardReveals()
+
+		this.#sendToAllPlayers({
+			type: "fiveCardDraw",
+			action: "revealedWinners",
+			winners: winners
+		})
+	}
+
+	ante(smallBlindIndex, bet = this.#currentBet/2) {
+		this.#pot.bet(this.#players[smallBlindIndex], bet)
+
+		// big blind
+		this.#pot.bet(smallBlindIndex == this.#players.length-1 ? this.#players[0] : this.#players[smallBlindIndex + 1], bet*2)
+		
+		// Person next to the big blind, who will be the person to start playing in the game
+		this.#firstToPlayIndex = (smallBlindIndex == this.#players.length-2 ? 0 : smallBlindIndex+2 % this.#players.length)
+		this.#toPlayIndex = this.#firstToPlayIndex
+
+
+		// Ante is also the start of the game, so we give everyone their hands.
+		var hands = []
+		this.deal(this.#players.length, hands)
+
+		// Give everyone their hands
+		for (let i = 0; i < this.#players.length; i++) {
+			this.#players[i].hand = hands[i]
+
+			// and tell them they have gotten a hand
+			this.#players[i].send({
+				type: "fiveCardDraw",
+				action: "giveHand",
+				hand: [
+					{
+						label: this.#players[i].hand[0].label,
+						suit: this.#players[i].hand[0].suit
+					}, {
+						label: this.#players[i].hand[1].label,
+						suit: this.#players[i].hand[1].suit
+					}, {
+						label: this.#players[i].hand[2].label,
+						suit: this.#players[i].hand[2].suit
+					}, {
+						label: this.#players[i].hand[3].label,
+						suit: this.#players[i].hand[3].suit
+					}, {
+						label: this.#players[i].hand[4].label,
+						suit: this.#players[i].hand[4].suit
+					},
+				]
+			})
+		}
+
+		this.#sendToAllPlayers(this.getGameState())
+	}
+
+	#nextTurn() {
+		if (this.#round === 1) {return}
+		do {
+			if (this.#toPlayIndex == this.#players.length-1) {
+				this.#toPlayIndex = 0
+			} else {
+				this.#toPlayIndex = this.#toPlayIndex + 1
+			}
+
+			if (this.#toPlayIndex == this.#firstToPlayIndex) { // If we've reached the end, make it the next round.
+				for (var i = 0; i < this.#players.length; i++) {
+					if (this.#players[i].state != "folded") {
+						this.#players[i].state = "none"
+
+						this.#sendToAllPlayers(this.getGameState())
+					}
+				}
+
+				if (!this.#raised) { // If we hadn't raised and have a new round of betting, we move onto the next game state
+					switch (this.#round) {
+						case 0:
+							this.#round = 1 // Time for discarding. 
+							// A special occasion, so we just leave now
+							this.#sendToAllPlayers({
+								type: "fiveCardDraw",
+								action: "discardTurn"
+							})
+							return
+						case 2:
+							this.endGame()
+							break
+						case 1: // If we're discarding, we shouldn't be here!!!
+							throw Error("FiveCardDraw made discarding turn based")
+						default:
+							throw Error("Invalid fiveCardDraw round")
+							return
+					}
+				} else {this.#raised = false} // Otherwise, we'll get 'em next round.
+			}
+
+			// If the player who would play has folded, they do not have a turn, so it must be the next persons!
+		} while (this.#players[this.#toPlayIndex].state == "folded")
+
+		// Tell everyone whose turn it is!
+		this.#sendToAllPlayers({
+			type: "fiveCardDraw",
+			action: "nextTurn",
+			toPlay: this.#toPlayIndex
+		})
+	}
+
+	playerDiscard(playerIndex, cardsToDiscard) {
+		// We do not care about turns when discarding. We just wait until everyone has discarded
+		if (players[playerIndex].state != "discarded" && players[playerIndex].state != "folded" && this.round == 1) {
+			for (const index of cardsToDiscard) {
+				this.#players[playerIndex].hand[index] = this.cards.pop()
+			}
+
+			players[playerIndex].state = "discarded"
+
+			this.#players[i].send({
+				type: "fiveCardDraw",
+				action: "giveHand",
+				hand: [
+					{
+						label: this.#players[i].hand[0].label,
+						suit: this.#players[i].hand[0].suit
+					}, {
+						label: this.#players[i].hand[1].label,
+						suit: this.#players[i].hand[1].suit
+					}, {
+						label: this.#players[i].hand[2].label,
+						suit: this.#players[i].hand[2].suit
+					}, {
+						label: this.#players[i].hand[3].label,
+						suit: this.#players[i].hand[3].suit
+					}, {
+						label: this.#players[i].hand[4].label,
+						suit: this.#players[i].hand[4].suit
+					},
+				]
+			})
+
+			this.#sendToAllPlayers({
+				type: "fiveCardDraw",
+				action: "playerDiscarded",
+				discardAmount: cardsToDiscard.length,
+				playerIndex: playerIndex,
+				player: this.#players[playerIndex]
+			})
+
+
+			for (player of this.#players) {
+				if (player.state != "folded" || player.state != "discarded") {
+					return
+				}
+			}
+			// If that for loop did not exit, then everyone has either discarded or folded. Thus, its onto the next turn!
+			this.#round = 2
+			this.#nextTurn()
+		}
+	}
+
+	playerRaise(playerIndex, raise) {
+		if (playerIndex == this.#toPlayIndex) {
+			var player = this.#players[playerIndex]
+			if (player.state != "folded") {
+				this.#pot.raise(player, raise)
+				player.state = "raised"
+				this.#raised = true
+
+				this.#sendToAllPlayers({
+					type: "fiveCardDraw",
+					action: "playerRaised",
+					raiseAmount: raise,
+					playerIndex: playerIndex,
+					player: this.#players[playerIndex]
+				})
+
+				this.#nextTurn()
+			}
+		}
+	}
+
+	playerCall(playerIndex) { 
+		if (playerIndex == this.#toPlayIndex) {
+			var player = this.#players[playerIndex]
+			if (player.state != "folded") {
+				this.#pot.call(player)
+				player.state = "called"
+
+
+				this.#sendToAllPlayers({
+					type: "fiveCardDraw",
+					action: "playerCalled",
+					playerIndex: playerIndex,
+					player: this.#players[playerIndex]
+				})
+
+				this.#nextTurn()
+			}
+		}
+	}
+
+	playerFold(playerIndex) {
+		if (playerIndex == this.#toPlayIndex) {
+			this.#players[playerIndex].state = "folded"
+
+			this.#sendToAllPlayers({
+				type: "fiveCardDraw",
+				action: "playerFolded",
+				playerIndex: playerIndex,
+				player: this.#players[playerIndex]
+			})
+
+			this.#nextTurn()
+		}
+	}
+}
+
+
+// This is the same as videoPokerHTML, but with betting added
+const fiveCardDrawHTML = `
+<span class="currentChips" id="fiveCardDrawCurrentChips"></span>
+<button class="discardButton" id="fiveCardDrawDiscardButton"></button>
+<label for="fiveCardDrawRaiseInput">raise input:</label>
+<input class="raiseInput" id="fiveCardDrawRaiseInput"></input>
+<button class="raise" id="fiveCardDrawRaise"></button>
+<button class="call" id="fiveCardDrawCall"></button>
+<button class="fold" id="fiveCardDrawFold"></button>
+<ul class="hand" id="fiveCardDrawHand"></ul>
+<ul class="playerStates" id="fiveCardDrawPlayerStates"></ul>
+<div class="gameOutput" id="fiveCardDrawOutput"></div>
+`
+
+// Works much like texasHoldEmHTMLHandler, as it handles multiplayer bets and the like.
+export class FiveCardDrawHTMLHandler {
+	// Arbitrarily accessible class attributes for easy access to DOM elements.
+	currentChips
+	discardButton
+	raiseInput
+	raise
+	call
+	fold
+	hand
+	gameOutput
+
+	playerStates
+	playerIndex
+	
+	sendToHost
+
+	constructor(document, container, players,
+		playerSelfIndex, // The index for the player representing the creator of this HTMLHandler.
+
+		// A NetworkAPI.sendObject function directed to the host of the game, for game actions.
+		// If you are the host, this must instead be a function that passes to the game itself: fiveCardDraw.receiveAction(action)
+		sendToHost
+	) {
+		container.insertAdjacentHTML("beforeend", fiveCardDrawHTML)
+
+		this.document = document
+		this.currentChips = document.getElementById("fiveCardDrawCurrentChips")
+		this.betInput = document.getElementById("fiveCardDrawRaiseInput")
+		this.discardButton = document.getElementById("fiveCardDrawDiscardButton")
+		this.raiseInput = document.getElementById("fiveCardDrawRaiseInput")
+		this.raise = document.getElementById("fiveCardDrawRaise")
+		this.call = document.getElementById("fiveCardDrawCall")
+		this.fold = document.getElementById("fiveCardDrawFold")
+		this.hand = document.getElementById("fiveCardDrawHand")
+		this.playerStates = document.getElementById("fiveCardDrawPlayerStates")
+		this.gameOutput = document.getElementById("fiveCardDrawOutput")
+
+		for (var i = 0; i < players.length; i++) {
+			const player = this.document.createElement("li")
+			player.classList.add("player")
+			player.dataset.state = "none"
+			player.dataset.name = players[i].name
+			player.dataset.index = i
+			player.dataset.chipsRemaining = players[i].chipsRemaining
+			player.dataset.chipsBet = players[i].chipsBet
+
+			this.playerStates.appendChild(player)
+		}
+
+
+		// The deal button is called only when it is time to discard cards after the first betting round
+		this.discardButton.onclick = () => {
+			const cards = this.hand.querySelectorAll("li")
+			let cardsToDiscard = []
+			for (card of cards) { // Find all cards we selected to discard
+				if (card.dataset.selected = "TRUE") {
+					cardsToDiscard.push(card.dataset.index)
+				}
+			}
+
+			this.sendToHost({
+				type: "fiveCardDraw",
+				action: "discard",
+				cardsToDiscard: cardsToDiscard,
+				playerIndex: playerSelfIndex
+			})
+		}
+
+		this.call.onclick = () => {
+			this.sendToHost({
+				type: "fiveCardDraw",
+				action: "call",
+				playerIndex: playerSelfIndex
+			})
+		}
+
+		this.raise.onclick = () => {
+			this.sendToHost({
+				type: "fiveCardDraw",
+				action: "raise",
+				playerIndex: playerSelfIndex,
+				raise: Number(this.raiseInput.value)
+			})
+		}
+
+		this.fold.onclick = () => {
+			this.sendToHost({
+				type: "fiveCardDraw",
+				action: "fold",
+				playerIndex: playerSelfIndex
+			})
+		}
+	}
+
+
+	outputString(string) {
+		const newOutput = document.createElement("p")
+		newOutput.innerHTML = string
+		this.output.appendChild(newOutput)
+	}
+
+
+	renderHand(hand) {
+		for (let i = 0; i < hand.length; i++) {
+			const card = this.document.createElement("li")
+			card.classList.add("card")
+			card.dataset.label = hand[i].label
+			card.dataset.suit = hand[i].suit
+			card.dataset.index = i
+			card.dataset.selected = "FALSE"
+
+			card.addEventListener("click", () => {
+				if (card.dataset.selected != "TRUE") {
+					card.dataset.selected = "TRUE"
+				} else {
+					card.dataset.selected = "FALSE"
+				}
+			})
+			
+			this.hand.appendChild(card)
+		}
+	}
+
+
+	updatePlayerState(playerIndex, state) {
+		const playerStates = this.playerStates.querySelectorAll(`[data-index="${playerIndex}"`)
+		playerStates.forEach(playerState => {
+			playerState.dataset.state = state // as in folded, called, or raised
+		})
+	}
+
+	updatePlayerBalance(playerIndex, chipsBet, chipsRemaining) {
+		const playerStates = this.playerStates.querySelectorAll(`[data-index="${playerIndex}"`)
+		playerStates.forEach(playerState => {
+			playerState.dataset.chipsBet = chipsBet
+			playerState.dataset.chipsRemaining = chipsRemaining
+		})
+	}
+
+
+	receiveAction(actionObject) {
+		switch(actionObject.action) {
+			case "giveHand":
+				this.renderHand(actionObject.hand)
+				break
+
+			case "nextTurn": 
+				if (actionObject.toPlay == this.playerSelfIndex) {
+					const p = this.document.createElement("p")
+					p.innerText = "It is your turn to play!"
+					this.gameOutput.appendChild(p)
+				} else {
+					const p = this.document.createElement("p")
+					p.innerText = "It is player " + actionObject.toPlay + "'s turn."
+					this.gameOutput.appendChild(p)
+				}
+				break
+
+			case "showHand": {
+				const p = this.document.createElement("p")
+				p.innerText = actionObject.player.name + " had " + actionObject.player.hand[0].label + " " + actionObject.player.hand[0].suit
+				+ " and " + actionObject.player.hand[1].label + " " + actionObject.player.hand[1].suit + ". A " + actionObject.handType
+
+				this.gameOutput.appendChild(p)
+				this.updatePlayerBalance(actionObject.ownerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerDiscarded": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " discarded " + actionObject.discardAmount
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "discarded")
+			} break
+
+			case "playerRaised": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " raised " + actionObject.raiseAmount
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "raised")
+				this.updatePlayerBalance(actionObject.playerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerCalled": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " called."
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "called")
+				this.updatePlayerBalance(actionObject.playerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerFolded": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " called."
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "folded")
+			} break
+
+			case "gameState": {
+				for (let i = 0; i < actionObject.players.length; i++) {
+					this.updatePlayerState(i, actionObject.players[i].state)
+					this.updatePlayerBalance(i, actionObject.players[i].chipsBet, actionObject.players[i].chipsRemaining)
+				}
+			} break
+
+			// Kind of stupid, but I like the logic.
+			// The host has sendToHost() send this to the host stuff, whilst others have sendToHost() send it to the host.
+			case "raise":
+			case "call":
+			case "fold":
+			case "discard":
+				this.sendToHost(actionObject)
+				break
+		}
 	}
 }
