@@ -1,6 +1,7 @@
 import {
 	pokerHandType,
-	handScore
+	handScore,
+	Pot
 } from "../static/cards/poker.js"
 
 test("A straight is straight", () => {
@@ -1036,4 +1037,254 @@ test("Full house gets correct score", () => {
 			suit: "Diamond"
 		},
 	])).toBe(34)
+})
+
+
+
+
+
+
+test("Calling a bet without anything will thus check", () => {
+	let players = [
+		{
+			chipsRemaining: 100,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 100,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 100,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 100,
+			chipsBet: 0
+		}
+	]
+	let pot = new Pot(players)
+
+	for (const player of players) {
+		pot.call(player)
+	} // An actual call of base bet (10)
+
+	for (const player of players) {
+		pot.call(player)
+	} // Equivalent to a check, as we have called the bet, and thus have nothing to call.
+
+	expect(players).toStrictEqual([
+		{
+			chipsRemaining: 90,
+			chipsBet: 10
+		},
+		{
+			chipsRemaining: 90,
+			chipsBet: 10
+		},
+		{
+			chipsRemaining: 90,
+			chipsBet: 10
+		},
+		{
+			chipsRemaining: 90,
+			chipsBet: 10
+		}
+	])
+})
+
+
+
+test("A pot will split if one player doesn't have enough chips to play with others", () => {
+	let players = [
+		{ // The odd one out
+			chipsRemaining: 50,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 100,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 100,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 100,
+			chipsBet: 0
+		}
+	]
+	let pot = new Pot(players, 50)
+
+	for (const player of players) {
+		pot.call(player)
+	} // Everyone bets 50, and player 0 goes under
+
+	pot.raise(players[1], 50) // Player 1 gets feisty
+
+	for (const player of players) {
+		pot.call(player)
+	} // Everyone calls another 50, player 0 has an empty call, everyone else bets everything else
+
+	pot.reward([players[0]]) // All-in guy won!
+
+	expect(players).toStrictEqual([
+		{ // Well, all-in guy won only half the pot, since it split.
+			chipsRemaining: 200,
+			chipsBet: 50
+		},
+		{
+			chipsRemaining: 50,
+			chipsBet: 100
+		},
+		{
+			chipsRemaining: 50,
+			chipsBet: 100
+		},
+		{
+			chipsRemaining: 50,
+			chipsBet: 100
+		}
+	])
+})
+
+
+
+test("A pot will split many times if many players don't have enough chips to play with others", () => {
+	let players = [
+		{
+			chipsRemaining: 13, // All primes, to ensure stuff actually works
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 31,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 79,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 223,
+			chipsBet: 0
+		}
+	]
+	let pot = new Pot(players, 13)
+
+	for (const player of players) {
+		pot.call(player)
+	} // Player 0 is out
+
+	pot.raise(players[1], 18) // Player 1 makes his move
+
+	for (const player of players) {
+		pot.call(player)
+	} // Player 1 is out
+
+	pot.raise(players[2], 48) // Player 2 makes his move
+
+	for (const player of players) {
+		pot.call(player)
+	} // Player 2 is out
+
+	pot.raise(players[3], 144) // Player 3 makes his move, just for a joke, I guess?
+
+	for (const player of players) {
+		pot.call(player)
+	} // Player 3 is out
+
+	pot.reward([players[1]]) // Player 1 won!
+
+	expect(players).toStrictEqual([
+		{
+			chipsRemaining: 0,
+			chipsBet: 13
+		},
+		{
+			chipsRemaining: 106, // 31 * 3 + 13
+			chipsBet: 31
+		},
+		{
+			chipsRemaining: 48, // (79-31)
+			chipsBet: 79
+		},
+		{
+			chipsRemaining: 192, // (79-31) + (223-79)
+			chipsBet: 223
+		}
+	])
+})
+
+
+
+test("A pot will split for only those who did not fold", () => {
+	let players = [
+		{
+			chipsRemaining: 13, // All primes, to ensure stuff actually works
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 31,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 79,
+			chipsBet: 0
+		},
+		{
+			chipsRemaining: 223,
+			chipsBet: 0
+		}
+	]
+	let pot = new Pot(players, 13)
+
+	for (const player of players) {
+		pot.call(player)
+	} // Player 0 is out
+
+	pot.raise(players[1], 18) // Player 1 makes his move
+
+	for (const player of players) {
+		pot.call(player)
+	} // Player 1 is out
+
+	pot.raise(players[2], 48) // Player 2 makes his move
+
+	for (const player of players) {
+		pot.call(player)
+	} // Player 2 is out
+
+	pot.raise(players[3], 144) // Player 3 makes his move, just for a joke, I guess?
+
+	for (const player of players) {
+		pot.call(player)
+	} // Player 3 is out
+
+
+	// For some miraculous reason, player 1 and player 2 folded
+	players[1].state = "folded"
+	players[2].state = "folded"
+
+	pot.reward([players[0]]) // Player 0 won!
+
+	expect(players).toStrictEqual([
+		{
+			chipsRemaining: 52, // 13 * 4 = 52
+			chipsBet: 13
+		},
+		{
+			chipsRemaining: 0,
+			chipsBet: 31,
+			state: "folded"
+		},
+		{
+			chipsRemaining: 0,
+			chipsBet: 79,
+			state: "folded"
+		},
+		{
+			chipsRemaining: 294, // (223 + 31 + 79) - (13 * 3)
+			chipsBet: 223
+		}
+	])
 })

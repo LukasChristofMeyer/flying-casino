@@ -491,12 +491,13 @@ export class VideoPokerHTMLHandler {
 // If someone raises when someone has gone all-in, then the all-in person has an issue in that they cannot dedicate more chips to call.
 // In this case then, raises have to go into another sidePot, which the all-in does not get the winnings of since they did not dedicate to it.
 // So, that causes some decently complicated logic!  
-//
-// Note that this class is untested, and may need a lot of debugging.
-class Pot {
+export class Pot {
 	#prize
 	#allInLimit
-	#currentBet // The amount needed to be bet, as per players.chipsBet. Needed, so that calling multiple times does not overcharge you.
+
+	// The amount needed to be bet, as per players.chipsBet. Needed, so that calling multiple times does not overcharge you.
+	// More literally, it is simply matching the highest player.chipsbet, as players should bet towards it, or make it higher.
+	#currentBet
 	#players
 	#sidePot = {}
 
@@ -507,44 +508,35 @@ class Pot {
 		this.#players = players.slice().sort((a,b) => (a.chipsRemaining + a.chipsBet) - (b.chipsRemaining + b.chipsBet))
 		this.#allInLimit = this.#players[0].chipsRemaining + this.#players[0].chipsBet // The player with the least chips.
 
-
 		// Maybe hacky? But making the function call just jump here if the pot isn't initialized is more efficient than having to check.
 		// My argument why this is acceptable design-wise is it's purely recursive & internal: no one should jump here but this class.
 		// It's also kind of cool, right? lol
 		this.#sidePot.bet = (player, bet) => {
 			for (var i = 0; i < this.#players.length; i++) {
+				// As players is sorted lowest to highest we nab first highest
 				if (this.#players[i].chipsRemaining + this.#players[i].chipsBet > this.#allInLimit) {
-					var sidePot
-					if (bet >= this.#currentBet) {
-						// This slice is fine as we shouldn't use the players array for anything but balance keeping.
-						// After all, all that this class does is help keep balance of bets, rather than decide how they are to bet.
-						sidePot = new Pot(this.#players.slice(i), bet)
-					} else {
-						// This is needed since a sidePot can be betted with "spill over" less then the currentBet.
-						sidePot = new Pot(this.#players.slice(i), this.#currentBet)
-					}
-
+					var sidePot = new Pot(this.#players.slice(i), bet)
 					this.#sidePot = sidePot
 					return sidePot.bet(player, bet)
 				}
 			}
 			// No reason to make a sidePot if it isn't actually aside from the rest.
-			throw RangeError("sidePot attempted to be created without a larger limit")
+			throw RangeError(`sidePot attempted to be created with ${bet+this.#currentBet} that isn't a larger then ${this.#allInLimit}`)
 		}
 
 		// If the sidePot was never initialized and these redefined, then they definitely do not do anything
 		this.#sidePot.splitPot = () => {return}
 		this.#sidePot.reward = (players) => {return}
 		this.#sidePot.destroy = () => {return}
-
 	}
 
 
 	bet(player, bet = this.#currentBet) {
+		if (bet < 0) {throw RangeError(`${player} is betting ${bet}. They're betting negative; they're stealing!!!`)}
 		var betLimit = this.#allInLimit - player.chipsBet
-		if (betLimit <= 0) { // If we have bet enough that we cannot for this pot anymore
-			this.#sidePot.bet(player, bet) // Then we can just bet for the next pot with higher stakes!
-			return
+
+		if (betLimit < 0) { // If we have bet enough that we cannot for this pot anymore
+			this.#sidePot.bet(player, bet) // Then bet what we could for the next pot with higher stakes!
 		}
 		
 		else if (bet > betLimit) { // If we will now bet more than we can for the Pot
@@ -553,29 +545,33 @@ class Pot {
 			player.chipsRemaining -= betLimit
 
 			this.#sidePot.bet(player, bet - betLimit) // Then give to the next pot what we have left.
-			return
 		}
 		
 		else { // Normal
 			this.#prize += bet
 			player.chipsBet += bet
 			player.chipsRemaining -= bet
-
-			return
 		}
+
+		if (this.#currentBet < player.chipsBet) {this.#currentBet = player.chipsBet}
 	}
 
 	raise(player, raise) {
-		let newBet = raise + this.#currentBet
-		this.#currentBet = newBet
-		this.call(player)
+		if (raise > player.chipsRemaining) {
+			this.bet(player, player.chipsRemaining)
+		} else {
+			this.bet(player, raise + this.#currentBet - player.chipsBet)
+		}
 	}
 
 	// To call is to bet only up to that which is the currentBet.
 	call(player) {
 		let callBet = this.#currentBet - player.chipsBet
+
 		if (callBet < 0) {
 			this.bet(player, 0)
+		} else if (callBet > player.chipsRemaining) {
+			this.bet(player, player.chipsRemaining)
 		} else {
 			this.bet(player, callBet)
 		}
@@ -594,7 +590,7 @@ class Pot {
 
 	reward(players) {
 		// What rewarded players could have been in this pot
-		var playersInPot = players.filter(player => (player.chipsRemaining + player.chipsBet) < this.#allInLimit)
+		var playersInPot = players.filter(player => (player.chipsRemaining + player.chipsBet) >= this.#allInLimit)
 		if (playersInPot.length > 0) { // If we have any,
 			// Also reward them the next pot if they were in it
 			this.#sidePot.reward(playersInPot)
@@ -958,11 +954,8 @@ const texasHoldEmHTML = `
 <div class="gameOutput" id="texasHoldemOutput"></div>
 `
 
-/*	to-do
-	Differentiate between host and non-host
-		Ensure that the host gives non-hosts a players list matching their own. (or otherwise make lists compatible)
-	Test if everything actually works
-*/
+
+
 export class TexasHoldEmHTMLHandler {
 	// Arbitrarily accessible class attributes for easy access to DOM elements.
 	currentBet
