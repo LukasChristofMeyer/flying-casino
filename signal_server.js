@@ -50,6 +50,8 @@ class Room {
 		this.creator = '';
 		/** Name of the game being played */
 		this.game = '';
+
+		this.connectedPeers = 0;
 	}
 
 	/** Returns API-related information, like owner and number of players */
@@ -62,11 +64,15 @@ class Room {
 		}
 	}
 
-	/**
+	/** Adds a new peer to the room
 	 * @param {string} uuid UUID of the newly connected peer
 	 * @param {WebSocket} socket Connection to the signaling server
+	 * @returns {boolean} Whether the peer could be added
 	 */
 	add(uuid, socket) {
+		// Should be game based (?)
+		if (this.connectedPeers >= 4)
+			return false;
 		if (!this.#socketDict.get(uuid))
 			this.#socketDict.set(uuid, socket);
 
@@ -82,7 +88,23 @@ class Room {
 			'type': 'new-peer',
 			'id': uuid
 		}));
+		++this.connectedPeers;
+		return true;
+	}
 
+	/** Removes a peer from the room
+	 * @param {string} uuid 
+	 */
+	remove(uuid) {
+		if (!this.#socketDict.get(uuid))
+			return;
+
+		this.exclusiveBroadcast(message, JSON.stringify({
+			'type': 'leaving-peer',
+			'id': socketUuid
+		}));
+		this.#socketDict.delete(uuid);
+		--this.connectedPeers;
 	}
 
 	broadcast() {
@@ -104,22 +126,17 @@ class Room {
  * @param {WebSocket} socket 
  */
 function handler(socket) {
-	const uuid = crypto.randomUUID();
+	const socketUuid = crypto.randomUUID();
 
 	socket.on('message', data => {
-		packet = toObject(data);
+		let packet = toObject(data);
 
 		switch (packet.type) {
 			case 'join':
-				const roomId = packet.room;
-				let room;
+				const room = roomDict.get(packet.room);
+				room.add(socketUuid, socket);
 
-				if (!(room = roomDict.get(roomId)))
-					roomDict.set(
-						roomId,
-						room = new Room()
-					);
-				room.add(uuid, socket);
+				socket.associatedRoom = room;
 
 				break;
 			case 'send':
@@ -130,7 +147,8 @@ function handler(socket) {
 
 	socket.on('close', () => {
 		// Notify other clients that this one is leaving.
-
+		if (socket.associatedRoom)
+			socket.associatedRoom.remove(uuid);
 	});
 }
 
