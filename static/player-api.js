@@ -2,12 +2,22 @@
 class LocalPlayerData {
 	/** @type {string} */
 	#name
+	#chips
+	#wins
 	constructor(name) {
 		this.#name = name;
 	}
 
 	getName() {
 		return this.#name;
+	}
+
+	getChips() {
+		return this.#chips;
+	}
+
+	getWins() {
+		return this.#chips;
 	}
 }
 
