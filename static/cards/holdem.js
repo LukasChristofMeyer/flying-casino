@@ -1,11 +1,12 @@
 import { TexasHoldEm, Player, pokerHandType, pokerHandValueTable } from "./poker.js"
 import { constructNetworkAPI } from "../network/network.js"
 import { retrievePlayerData } from "../player-api.js"
+import { signalServerAddress } from "../flying-casino.js"
 
 const STARTING_CHIPS = 1000
 const STARTING_BET	 = 10
 const MAX_PLAYERS		= 4
-const SIGNAL_URL		 = "wss://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/"
+const SIGNAL_URL		 = signalServerAddress
 const params				 = new URLSearchParams(window.location.search)
 const isSolo				 = params.has('solo')
 const roomId				 = params.get('room') || 'global'
