@@ -1,18 +1,20 @@
-import ws from 'ws';
+import {WebSocketServer} from 'ws';
 import crypto from 'crypto';
 import express from 'express';
+import http from 'http';
 
 /** Required to serve files via relative file paths. */
 let __dirname;
 __dirname ??= import.meta.dirname;
 const options = { root: __dirname };
 
-/** Controls settings for the room provider.
- * Essentially a secondary webserver to serve as an API for listing lobbies.
+/** Controls settings for the server as a whole, including the room provider and websocket handler
  */
 const roomServiceConfig = {
-	port: 443,
-	hostname: 'localhost'
+	/** Needed for Azure; we have to ask kindly for the PORT we can use.
+	 * This is why you connect to the external Azure server without a port, but if hosted locally will have to connect to localhost:8765 */ 
+	port: process.env.PORT || 8765,
+	hostname: '0.0.0.0' // Change to localhost to run server locally!
 };
 
 /** Converts binary messages back to string. */
@@ -75,12 +77,11 @@ class Room {
 			return false;
 		if (!this.#socketDict.get(uuid))
 			this.#socketDict.set(uuid, socket);
-
 		// Reveal other peers to client
 		socket.send(JSON.stringify({
 			'type': 'welcome',
 			'id': uuid,
-			'peers': Object.keys(this.#socketDict).join(',')
+			'peers': [...this.#socketDict.keys()]
 		}));
 
 		// Tell existing peers about this new client
@@ -99,9 +100,9 @@ class Room {
 		if (!this.#socketDict.get(uuid))
 			return;
 
-		this.exclusiveBroadcast(message, JSON.stringify({
+		this.exclusiveBroadcast(uuid, JSON.stringify({
 			'type': 'leaving-peer',
-			'id': socketUuid
+			'id': uuid
 		}));
 		this.#socketDict.delete(uuid);
 		--this.connectedPeers;
@@ -116,16 +117,47 @@ class Room {
 	 * @param {string} message
 	 */
 	exclusiveBroadcast(ignoreUUID, message) {
-		for (const [peerUUID, peerSocket] of this.#socketDict)
+		for (const [peerUUID, peerSocket] of this.#socketDict) {
 			if (peerUUID != ignoreUUID)
 				peerSocket.send(message);
+		}
+	}
+
+
+	/** 
+	 * Sends a message to a certain peer
+	 * Added to handle the WebSocket 'send' type, without compromising the privacy of #socketDict
+	 * 
+	 * @param {string} playerUUID
+	 * @param {string} message
+	 */
+	sendTo(playerUUID, message) {
+		this.#socketDict.get(playerUUID).send(message)
 	}
 }
 
-/** WIP handler for signaling server
+/** 
+ * Handler for WebSockets, which is exclusively used for creating WebRTC data connections
+ * 
+ * Takes WebSocket messages of type:
+ * * 'join'  
+ * > Requiring key-pair 'room': room UUID  
+ * > This message type will add the sending WebSocket to a room which was previously created, giving the WebSocket a .associatedRoom.  
+ * > It returns a message of type 'welcome' giving information on all other WebSockets in the room, 
+ *   and also tells every other WebSocket related to the room of the new WebSocket.
+ * * 'send'
+ * > Requiring key-pair 'to': id of websocket wish to send to, and expecting key-pair 'from': id of our own websocket  
+ * > This message type will send an arbitrary JSON WebSocket message to another WebSocket in the same room, by that WebSockets UUID.  
+ * 
+ * On WebSocket close, it will tell all other peers of a WebSockets within the WebSocket's room to be removed.  
+ * 
+ * With these messages, you are intended to then set up WebRTC P2P data connections to all WebSockets in a room.  
+ * Look at static/network/network.js for our implementation.
+ * 
  * @param {WebSocket} socket 
+ * @param {http.IncomingMessage} _request Unusued. The HTTP request which was upgraded to a WebSocket we are handling.
  */
-function handler(socket) {
+function handler(socket, _request) {
 	const socketUuid = crypto.randomUUID();
 
 	socket.on('message', data => {
@@ -141,6 +173,11 @@ function handler(socket) {
 				break;
 			case 'send':
 				const targetPeer = packet.to;
+
+				if (socket.associatedRoom) {
+					roomDict.get(socket.associatedRoom.id).sendTo(targetPeer, JSON.stringify(packet))
+				}
+
 				break;
 		}
 	});
@@ -148,7 +185,7 @@ function handler(socket) {
 	socket.on('close', () => {
 		// Notify other clients that this one is leaving.
 		if (socket.associatedRoom)
-			socket.associatedRoom.remove(uuid);
+			socket.associatedRoom.remove(socketUuid);
 	});
 }
 
@@ -171,6 +208,8 @@ app.get('/rooms', (request, response) => {
 
 	// Necessary for allowing insecure access
 	response.setHeader('Access-Control-Allow-Origin', '*');
+	response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+	response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
 	response.send(API);
 });
@@ -190,10 +229,23 @@ app.post('/create-room', (request, response) => {
 	roomDict.set(room.id, room);
 
 	response.setHeader('Access-Control-Allow-Origin', '*');
+	response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+	response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 	// Only way to "close" a one sided request
 	response.send('');
 });
 
-app.listen(roomServiceConfig.port, roomServiceConfig.hostname, () => {
+
+
+// Magic framework stuff that makes everything work as one wonderful webapp, with only one port!
+// Essentially, a wss / WebSocket is just http, but with an upgrade request to instead be a WebSocket;
+// Thus, server.listen can sort what connection is either for http or WebSocket, without needing ports, or anything complex.
+// This is a TLDR; I would give a source / documentation, but I've gone down the rabbit hole too much to provide anything succinct!
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', handler)
+
+server.listen(roomServiceConfig.port, roomServiceConfig.hostname, () => {
 	console.log(`room-service running @ http://${roomServiceConfig.hostname}:${roomServiceConfig.port}`)
 });
