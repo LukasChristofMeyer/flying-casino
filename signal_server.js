@@ -236,6 +236,35 @@ app.post('/create-room', (request, response) => {
 });
 
 
+/** Global stats object. Just expects a key string and a value string. 
+ * @type {Map<string, string>}
+ */
+const stats = new Map();
+
+app.get('/stats', (request, response) => {
+	// shoutouts to https://www.geeksforgeeks.org/javascript/how-to-convert-map-to-json-in-javascript/
+	let statsAPI = JSON.stringify(Object.fromEntries(stats))
+
+	// Necessary for allowing insecure access
+	response.setHeader('Access-Control-Allow-Origin', '*');
+	response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+	response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+	response.send(statsAPI);
+});
+
+/** /create-stats wants a .key and a .value. We then just place these into the stats map  */
+app.post('/create-stats', (request, response) => {
+	const statsRequest = JSON.parse(request.body);
+
+	stats.set(statsRequest.key, statsRequest.value);
+
+	response.setHeader('Access-Control-Allow-Origin', '*');
+	response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+	response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+	// Only way to "close" a one sided request
+	response.send('');
+});
 
 // Magic framework stuff that makes everything work as one wonderful webapp, with only one port!
 // Essentially, a wss / WebSocket is just http, but with an upgrade request to instead be a WebSocket;
