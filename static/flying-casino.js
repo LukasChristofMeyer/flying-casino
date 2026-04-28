@@ -1,7 +1,7 @@
 /** Server IP for API
  * @type {string}
  */
-export const apiAddress = "http://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/";
+export const apiAddress = "https://flying-casino-brakftgmdhbca5cy.canadacentral-01.azurewebsites.net/";
 
 /** Server IP for signaling server
  * @type {string}
