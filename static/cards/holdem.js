@@ -1,6 +1,6 @@
 import { TexasHoldEm, Player, pokerHandType, pokerHandValueTable } from "./poker.js"
 import { constructNetworkAPI } from "../network/network.js"
-import { retrievePlayerData } from "../player-api.js"
+import { retrievePlayerData, LocalPlayerData } from "../player-api.js"
 import { signalServerAddress } from "../flying-casino.js"
 
 const STARTING_CHIPS = 1000
@@ -365,6 +365,8 @@ function receiveGameMessage(msg) {
 				const i = players.findIndex(p=>p.name===w.name)
 				if (i>=0 && i!==myPlayerIndex) {
 					const el = document.getElementById(`opp-state-${i}`)
+					LocalPlayerData.giveWins();
+					LocalPlayerData.giveChips(parseInt(document.getElementById('pot-amount').textContent));
 					if (el) { el.textContent='★ Winner'; el.className='opp-state state-winner' }
 				}
 				log(`${w.name||'Unknown'} wins the pot!`, 'log-win')
