@@ -877,7 +877,7 @@ export class TexasHoldEm extends Poker {
 							break
 						case 3:
 							this.endGame()
-							break
+							return
 					}
 				} else {this.#raised = false} // Otherwise, we'll get 'em next round.
 			}
