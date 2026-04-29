@@ -40,6 +40,25 @@ const roomDict = new Map();
 class Room {
 	/** @type {Map<string, WebSocket>} */
 	#socketDict
+	timeout = null
+	
+	removeRoom() {roomDict.delete(this.id)}
+	beginTimeout() {
+		clearTimeout(this.timeout); // If there was another timeout, remove it. This is needed for cancellation.
+		this.timeout = setTimeout(() => removeRoom(), 180000); // Anyway, possibly resetting it for another three minutes is harmless
+	}
+	cancelTimeout() {
+		clearTimeout(this.timeout);
+		// Despite the name, if you're here for 24 hours and do not do anything to cancelTimeOut, you should leave likely for your own sake
+		// This long period is reasonable; the only interaction rooms have is the start of P2P interactions, so you could play a while
+		this.timeout = setTimeout(() => removeRoom(), 86400000)
+
+		// Notably, this also readds the room to the dict, in case it already did time out and was removed.
+		if (!roomDict.has(this.id)) {
+			roomDict.set(this.id, this)
+		}
+	}
+
 
 	constructor() {
 		this.#socketDict = new Map();
@@ -54,6 +73,9 @@ class Room {
 		this.game = '';
 
 		this.connectedPeers = 0;
+
+		// If nothing stops us, this room will no longer be in the map in three minutes.
+		this.beginTimeout()
 	}
 
 	/** Returns API-related information, like owner and number of players */
@@ -90,6 +112,10 @@ class Room {
 			'id': uuid
 		}));
 		++this.connectedPeers;
+
+		// As somebody is now in this room, we shall no longer be removing it!
+		this.cancelTimeout()
+
 		return true;
 	}
 
@@ -106,6 +132,9 @@ class Room {
 		}));
 		this.#socketDict.delete(uuid);
 		--this.connectedPeers;
+		
+		// If there is nobody in the room anymore, we'll remove the room from being accessible in three minutes.
+		if (this.connectedPeers <= 0) {this.beginTimeout} 
 	}
 
 	broadcast() {
@@ -117,6 +146,7 @@ class Room {
 	 * @param {string} message
 	 */
 	exclusiveBroadcast(ignoreUUID, message) {
+		this.cancelTimeout() // If we're being used, do not time out!
 		for (const [peerUUID, peerSocket] of this.#socketDict) {
 			if (peerUUID != ignoreUUID)
 				peerSocket.send(message);
@@ -132,6 +162,7 @@ class Room {
 	 * @param {string} message
 	 */
 	sendTo(playerUUID, message) {
+		this.cancelTimeout() // If we're being used, do not time out!
 		this.#socketDict.get(playerUUID).send(message)
 	}
 }
@@ -166,7 +197,7 @@ function handler(socket, _request) {
 		switch (packet.type) {
 			case 'join':
 				const room = roomDict.get(packet.room);
-				room.add(socketUuid, socket);
+				if (room) {room.add(socketUuid, socket);}
 
 				socket.associatedRoom = room;
 
