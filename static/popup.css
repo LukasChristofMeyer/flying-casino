@@ -1,10 +1,15 @@
+.statHover {
+  color: white;
+  font-size: 12px;
+}
+
 .popup {
   visibility: hidden;
   position: absolute;
   bottom: 100px;
   height: 200px;
   width: 75px;
-  color: beige;
+  background-color: beige;
 }
 
 .popup .show {
