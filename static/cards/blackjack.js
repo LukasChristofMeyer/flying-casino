@@ -1,5 +1,5 @@
 import { Deck } from "./deck.js";
-import { retrievePlayerData, PlayerData } from "../player-api.js";
+import { retrievePlayerData, LocalPlayerData } from "../player-api.js";
 
 // ── Custom cursor ──
 const cursor = document.getElementById('cursor');
@@ -164,7 +164,7 @@ function endRound() {
 	const pv = handler.getValue(handler.playerHand)
 	const dv = handler.getValue(handler.dealerHand)
 	if      (pv > 21)             { showResult('Bust — Dealer Wins', 'lose'); addLog('You bust.', 'log-action') }
-	else if (dv > 21 || pv > dv) { showResult('You Win!', 'win');    PlayerData.giveWins();        addLog(`You win — ${pv} vs ${dv}`, 'log-win') }
+	else if (dv > 21 || pv > dv) { showResult('You Win!', 'win');    LocalPlayerData.giveWins();        addLog(`You win — ${pv} vs ${dv}`, 'log-win') }
 	else if (pv === dv)           { showResult('Push', 'push');               addLog(`Push — ${pv} each`) }
 	else                          { showResult('Dealer Wins', 'lose');        addLog(`Dealer wins — ${dv} vs ${pv}`, 'log-action') }
 }
