@@ -94,6 +94,7 @@ const btnCall			= document.getElementById('btn-call')
 const btnRaise		 = document.getElementById('btn-raise')
 const raiseInput	 = document.getElementById('raise-input')
 const btnNext			= document.getElementById('btn-next-round')
+const btnPlayAgain = document.getElementById('btn-play-again')
 const oppRow			 = document.getElementById('opponents-row')
 const commCardsEl	= document.getElementById('community-cards')
 const yourTurnHint = document.getElementById('your-turn-hint')
@@ -363,16 +364,25 @@ function receiveGameMessage(msg) {
 			setActionRow(false)
 			msg.winners.forEach(w => {
 				const i = players.findIndex(p=>p.name===w.name)
-				if (i>=0 && i!==myPlayerIndex) {
+				if (i>=0 && i===myPlayerIndex) {
+					playerData.giveWins()
+				} else if (i>=0) {
 					const el = document.getElementById(`opp-state-${i}`)
-					LocalPlayerData.giveWins();
-					LocalPlayerData.giveChips(parseInt(document.getElementById('pot-amount').textContent));
 					if (el) { el.textContent='★ Winner'; el.className='opp-state state-winner' }
 				}
 				log(`${w.name||'Unknown'} wins the pot!`, 'log-win')
 			})
 			updateAllSeats()
-			if (isHost) btnNext.classList.remove('hidden')
+			if (isHost) {
+				const gameOver = isSolo && gamePlayers.some(p => p.chipsRemaining <= 0)
+				if (gameOver) {
+					const iWon = gamePlayers[myPlayerIndex].chipsRemaining > 0
+					log(iWon ? '🎉 You win the game!' : 'Game over — you ran out of chips.', 'log-win')
+					btnPlayAgain.classList.remove('hidden')
+				} else {
+					btnNext.classList.remove('hidden')
+				}
+			}
 			break
 	}
 }
@@ -532,6 +542,13 @@ btnRaise.onclick = () => {
 	sendToHost?.({type:'texasHoldEm', action:'raise', playerIndex:myPlayerIndex, raise:amt})
 }
 btnNext.onclick	= () => { if (isHost) startNewRound() }
+btnPlayAgain.onclick = () => {
+	btnPlayAgain.classList.add('hidden')
+	gamePlayers.forEach(p => { p.chipsRemaining = STARTING_CHIPS; p.chipsBet = 0; p.state = 'none'; p.hand = null })
+	players = gamePlayers.map(p => pdata(p))
+	blindIndex = 0
+	startNewRound()
+}
 
 // ── Cursor ─────────────────────────────────────────────────────────────────
 const cursor = document.getElementById('cursor')

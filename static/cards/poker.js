@@ -788,6 +788,11 @@ export class TexasHoldEm extends Poker {
 		}
 
 		this.#sendToAllPlayers(this.getGameState())
+		this.#sendToAllPlayers({
+			type: "texasHoldEm",
+			action: "nextTurn",
+			toPlay: this.#toPlayIndex
+		})
 	}
 
 	#flop() {
@@ -941,7 +946,12 @@ export class TexasHoldEm extends Poker {
 				player: this.#players[playerIndex]
 			})
 
-			this.#nextTurn()
+			const activePlayers = this.#players.filter(p => p.state !== "folded")
+			if (activePlayers.length === 1) {
+				this.endGame()
+			} else {
+				this.#nextTurn()
+			}
 		}
 	}
 }

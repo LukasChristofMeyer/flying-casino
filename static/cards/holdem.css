@@ -430,6 +430,14 @@
 }
 .btn-next-round:hover:not(:disabled) { background: var(--gold); color: #080808; }
 
+.btn-play-again {
+	background: var(--gold);
+	border: 1.5px solid var(--gold-light);
+	color: #080808;
+	font-weight: 700;
+}
+.btn-play-again:hover { background: var(--gold-light); border-color: var(--gold-light); }
+
 .raise-wrap { display: flex; align-items: center; gap: 4px; }
 
 .raise-input {
