@@ -1,11 +1,13 @@
 /** An interface for player data between the game(s) and the local storage. */
-class LocalPlayerData {
+export class LocalPlayerData {
 	/** @type {string} */
 	#name
 	#chips
 	#wins
 	constructor(name) {
 		this.#name = name;
+		this.#chips = 0;
+		this.#wins = 0;
 	}
 
 	getName() {
@@ -17,15 +19,15 @@ class LocalPlayerData {
 	}
 
 	giveChips(x) {
-		this.chips += x;
+		this.#chips += x;
 	}
 
 	getWins() {
-		return this.#chips;
+		return this.#wins;
 	}
 
 	giveWins() {
-		this.wins += 1;
+		this.#wins += 1;
 	}
 }
 

@@ -154,9 +154,16 @@ document.getElementById('btn-back-games').addEventListener('click', showGames);
 
 // ── Custom cursor ──
 const cursor = document.getElementById('cursor');
+const _savedPos = sessionStorage.getItem('cursorPos');
+if (_savedPos) {
+	const { x, y } = JSON.parse(_savedPos);
+	cursor.style.left = x + 'px';
+	cursor.style.top  = y + 'px';
+}
 document.addEventListener('mousemove', e => {
 	cursor.style.left = e.clientX + 'px';
 	cursor.style.top  = e.clientY + 'px';
+	sessionStorage.setItem('cursorPos', JSON.stringify({ x: e.clientX, y: e.clientY }));
 });
 
 const hoverTargets = '.game-card, .mode-card, .back-link, .btn-join, .create-row button, #create-btn, .create-row input';

@@ -427,34 +427,24 @@ function startNewRound() {
 
 // ── Solo mode setup ────────────────────────────────────────────────────────
 if (isSolo) {
-	document.getElementById('lobby-btns-multi').classList.add('hidden')
-	document.getElementById('lobby-btns-solo').classList.remove('hidden')
-	document.getElementById('lobby-player-list').classList.add('hidden')
-	document.getElementById('lobby-count').classList.add('hidden')
-	document.getElementById('lobby-status').classList.add('hidden')
-	document.querySelector('#view-lobby .lobby-subtitle').textContent = 'vs Computer'
-	addLobbyEntry(myName||'Player', STARTING_CHIPS, true)
+	isHost = true; myPlayerIndex = 0; playerCount = 2
 
-	document.getElementById('btn-play-solo').onclick = () => {
-		isHost = true; myPlayerIndex = 0; playerCount = 2
+	const me = new Player(obj => receiveGameMessage(obj))
+	me.chipsRemaining = STARTING_CHIPS; me.name = myName
 
-		const me = new Player(obj => receiveGameMessage(obj))
-		me.chipsRemaining = STARTING_CHIPS; me.name = myName
+	const ai = new PokerAI(1)
+	ai.chipsRemaining = STARTING_CHIPS; ai.name = 'Dealer'
 
-		const ai = new PokerAI(1)
-		ai.chipsRemaining = STARTING_CHIPS; ai.name = 'Dealer'
+	gamePlayers = [me, ai]
+	players		 = gamePlayers.map(p => pdata(p))
 
-		gamePlayers = [me, ai]
-		players		 = gamePlayers.map(p => pdata(p))
+	game			= new TexasHoldEm(gamePlayers, STARTING_BET)
+	sendToHost = obj => game.receiveAction(obj)
+	ai.setActionFn(obj => game.receiveAction(obj))
 
-		game			= new TexasHoldEm(gamePlayers, STARTING_BET)
-		sendToHost = obj => game.receiveAction(obj)
-		ai.setActionFn(obj => game.receiveAction(obj))
-
-		initGameView()
-		game.ante(blindIndex)
-		blindIndex = 1
-	}
+	initGameView()
+	game.ante(blindIndex)
+	blindIndex = 1
 }
 
 // ── Network + multiplayer buttons (skipped in solo mode) ──────────────────
@@ -545,7 +535,12 @@ btnNext.onclick	= () => { if (isHost) startNewRound() }
 
 // ── Cursor ─────────────────────────────────────────────────────────────────
 const cursor = document.getElementById('cursor')
-document.addEventListener('mousemove', e => { cursor.style.left=e.clientX+'px'; cursor.style.top=e.clientY+'px' })
+const _savedPos = sessionStorage.getItem('cursorPos')
+if (_savedPos) { const {x,y}=JSON.parse(_savedPos); cursor.style.left=x+'px'; cursor.style.top=y+'px' }
+document.addEventListener('mousemove', e => {
+	cursor.style.left=e.clientX+'px'; cursor.style.top=e.clientY+'px'
+	sessionStorage.setItem('cursorPos', JSON.stringify({x:e.clientX,y:e.clientY}))
+})
 const hsel = 'button:not(:disabled), a, .ball, input'
 document.addEventListener('mouseover', e => {
 	if (e.target.matches(hsel)||e.target.closest(hsel))

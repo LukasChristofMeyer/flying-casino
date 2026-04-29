@@ -10,9 +10,16 @@ const roomId = params.get('room') || 'global'
 
 // ── Custom cursor ──
 const cursor = document.getElementById('cursor')
+const _savedPos = sessionStorage.getItem('cursorPos')
+if (_savedPos) {
+	const { x, y } = JSON.parse(_savedPos)
+	cursor.style.left = x + 'px'
+	cursor.style.top  = y + 'px'
+}
 document.addEventListener('mousemove', e => {
 	cursor.style.left = e.clientX + 'px'
 	cursor.style.top  = e.clientY + 'px'
+	sessionStorage.setItem('cursorPos', JSON.stringify({ x: e.clientX, y: e.clientY }))
 })
 document.querySelectorAll('.lobby-btn, .action-btn, .back-link').forEach(el => {
 	el.addEventListener('mouseenter', () => {
@@ -346,7 +353,7 @@ function applyResults(msg) {
 	msg.results.forEach(r => {
 		const name = players[r.playerIndex]?.name || `Player ${r.playerIndex}`
 		if (r.playerIndex === myPlayerIndex) {
-			if      (r.outcome === 'win')  { showResult('You Win!', 'win'); LocalPlayerData.giveWins() }
+			if      (r.outcome === 'win')  { showResult('You Win!', 'win'); playerData.giveWins() }
 			else if (r.outcome === 'push')   showResult('Push', 'push')
 			else if (r.outcome === 'bust')   showResult('Bust', 'lose')
 			else                             showResult('Dealer Wins', 'lose')
@@ -377,23 +384,14 @@ btnStay.addEventListener('click', () => playerAction('stay'))
 
 // ── Solo mode ──
 if (isSolo) {
-	document.getElementById('lobby-btns-multi').classList.add('hidden')
-	document.getElementById('lobby-btns-solo').classList.remove('hidden')
-	document.getElementById('lobby-player-list').classList.add('hidden')
-	document.getElementById('lobby-count').classList.add('hidden')
-	document.getElementById('lobby-status').classList.add('hidden')
-
-	document.getElementById('btn-play').onclick = () => {
-		isHost = true
-		myPlayerIndex = 0
-		playerCount = 1
-		gamePlayers = [{ name: myName, state: 'playing', hand: [], send: () => {} }]
-		players = [{ name: myName, state: 'playing', hand: [] }]
-		initGameView()
-		hostStartRound()
-	}
-
+	isHost = true
+	myPlayerIndex = 0
+	playerCount = 1
+	gamePlayers = [{ name: myName, state: 'playing', hand: [], send: () => {} }]
+	players = [{ name: myName, state: 'playing', hand: [] }]
 	btnDeal.addEventListener('click', hostStartRound)
+	initGameView()
+	hostStartRound()
 }
 
 // ── Multiplayer mode ──
