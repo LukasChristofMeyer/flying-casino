@@ -57,9 +57,16 @@
               <!-- ── LOBBY ── -->
               <div id="view-lobby">
                 <div class="lobby-title">Blackjack</div>
-                <div class="lobby-subtitle">vs the Dealer</div>
-                <div class="lobby-btns">
-                  <button class="lobby-btn lobby-btn-start" id="btn-play">▶ Play</button>
+                <div class="lobby-subtitle">Multiplayer</div>
+                <div class="lobby-count" id="lobby-count">1 / 4 players</div>
+                <ul class="lobby-player-list" id="lobby-player-list"></ul>
+                <div class="lobby-status" id="lobby-status">Connecting…</div>
+                <div class="lobby-btns" id="lobby-btns-multi">
+                  <button class="lobby-btn lobby-btn-create" id="btn-create">+ Create Game</button>
+                  <button class="lobby-btn lobby-btn-start" id="btn-start" disabled>Start Game</button>
+                </div>
+                <div class="lobby-btns hidden" id="lobby-btns-solo">
+                  <button class="lobby-btn lobby-btn-start" id="btn-play">▶ Play vs Dealer</button>
                 </div>
                 <br>
                 <a href="../lobby/lobby.html" class="back-link">← Back to Lobby</a>
@@ -67,6 +74,8 @@
 
               <!-- ── GAME ── -->
               <div id="view-game" class="hidden">
+
+                <div class="opponents-row" id="opponents-row"></div>
 
                 <div class="game-top-bar">
                   <a href="../lobby/lobby.html" class="back-link">← Lobby</a>
@@ -96,6 +105,7 @@
                     <button class="action-btn btn-hit"  id="btn-hit"  disabled>Hit</button>
                     <button class="action-btn btn-stay" id="btn-stay" disabled>Stay</button>
                     <button class="action-btn btn-deal hidden" id="btn-deal">Deal Again</button>
+                    <button class="action-btn btn-next hidden" id="btn-next-round">Next Round</button>
                   </div>
                 </div>
 

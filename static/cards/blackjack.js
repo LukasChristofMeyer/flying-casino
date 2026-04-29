@@ -1,34 +1,41 @@
-import { Deck } from "./deck.js";
-import { retrievePlayerData, LocalPlayerData } from "../player-api.js";
+import { Deck } from "./deck.js"
+import { retrievePlayerData, LocalPlayerData } from "../player-api.js"
+import { constructNetworkAPI } from "../network/network.js"
+import { signalServerAddress } from "../flying-casino.js"
+
+const MAX_PLAYERS = 4
+const params = new URLSearchParams(window.location.search)
+const isSolo = params.has('solo')
+const roomId = params.get('room') || 'global'
 
 // ── Custom cursor ──
-const cursor = document.getElementById('cursor');
+const cursor = document.getElementById('cursor')
 document.addEventListener('mousemove', e => {
-	cursor.style.left = e.clientX + 'px';
-	cursor.style.top  = e.clientY + 'px';
-});
+	cursor.style.left = e.clientX + 'px'
+	cursor.style.top  = e.clientY + 'px'
+})
 document.querySelectorAll('.lobby-btn, .action-btn, .back-link').forEach(el => {
 	el.addEventListener('mouseenter', () => {
-		cursor.style.width = '16px'; cursor.style.height = '16px';
-		cursor.style.background = '#c9a84c';
-	});
+		cursor.style.width = '16px'; cursor.style.height = '16px'
+		cursor.style.background = '#c9a84c'
+	})
 	el.addEventListener('mouseleave', () => {
-		cursor.style.width = '8px'; cursor.style.height = '8px';
-		cursor.style.background = 'var(--white-ball)';
-	});
-});
+		cursor.style.width = '8px'; cursor.style.height = '8px'
+		cursor.style.background = 'var(--white-ball)'
+	})
+})
 document.addEventListener('mouseover', e => {
 	if (e.target.closest('.card')) {
-		cursor.style.width = '16px'; cursor.style.height = '16px';
-		cursor.style.background = '#c9a84c';
+		cursor.style.width = '16px'; cursor.style.height = '16px'
+		cursor.style.background = '#c9a84c'
 	}
-});
+})
 document.addEventListener('mouseout', e => {
 	if (e.target.closest('.card')) {
-		cursor.style.width = '8px'; cursor.style.height = '8px';
-		cursor.style.background = 'var(--white-ball)';
+		cursor.style.width = '8px'; cursor.style.height = '8px'
+		cursor.style.background = 'var(--white-ball)'
 	}
-});
+})
 
 // ── Card rendering helpers ──
 const SUIT_SYM  = { Spade:'♠', Heart:'♥', Club:'♣', Diamond:'♦' }
@@ -70,16 +77,12 @@ export class BlackjackHTMLHandler {
 		return total
 	}
 
-	hit(hand) {
-		hand.push(this.deck.cards.pop())
-	}
+	hit(hand) { hand.push(this.deck.cards.pop()) }
 
 	stay() {}
 
 	dealerPlay() {
-		while (this.getValue(this.dealerHand) < 17) {
-			this.hit(this.dealerHand)
-		}
+		while (this.getValue(this.dealerHand) < 17) this.hit(this.dealerHand)
 	}
 
 	renderCards(container, hand, hideSecond = false) {
@@ -96,91 +99,386 @@ export class BlackjackHTMLHandler {
 }
 
 export class Player {
-	constructor(sendFunction) {
-		this.send = sendFunction
-	}
+	constructor(sendFunction) { this.send = sendFunction }
 }
 
-// ── Singleplayer controller ──
-const handler = new BlackjackHTMLHandler()
+// ── Player data ──
+const playerData = retrievePlayerData()
+let myName = playerData?.getName?.() || ''
+if (!myName || myName === 'unnamed') myName = 'Player'
 
-const playerName    = retrievePlayerData().getName()
-const viewLobby     = document.getElementById('view-lobby')
-const viewGame      = document.getElementById('view-game')
-const btnPlay       = document.getElementById('btn-play')
-const playerNameEl  = document.getElementById('player-name-display')
-const btnHit        = document.getElementById('btn-hit')
-const btnStay       = document.getElementById('btn-stay')
-const btnDeal       = document.getElementById('btn-deal')
-const resultDisplay = document.getElementById('result-display')
-const roundLabel    = document.getElementById('round-label')
-const gameLog       = document.getElementById('game-log')
-
+// ── Shared state ──
+let network, isHost = false, hostId = null
+let myPlayerIndex = -1, playerCount = 0
+let players    = []   // view model: [{ name, state, hand: [{label,suit}] }]
+let gamePlayers = []  // host-side: [{ name, state, hand, send }]
 let roundCount = 0
 
+const handler = new BlackjackHTMLHandler()
+
+// ── DOM ──
+const viewLobby    = document.getElementById('view-lobby')
+const viewGame     = document.getElementById('view-game')
+const lobbyStatus  = document.getElementById('lobby-status')
+const lobbyList    = document.getElementById('lobby-player-list')
+const lobbyCount   = document.getElementById('lobby-count')
+const btnCreate    = document.getElementById('btn-create')
+const btnStart     = document.getElementById('btn-start')
+const playerNameEl = document.getElementById('player-name-display')
+const btnHit       = document.getElementById('btn-hit')
+const btnStay      = document.getElementById('btn-stay')
+const btnDeal      = document.getElementById('btn-deal')
+const btnNextRound = document.getElementById('btn-next-round')
+const resultDisplay = document.getElementById('result-display')
+const roundLabel   = document.getElementById('round-label')
+const gameLog      = document.getElementById('game-log')
+const oppRow       = document.getElementById('opponents-row')
+
+// ── Helpers ──
 function addLog(text, cls = '') {
 	const p = document.createElement('p')
-	if (cls) p.classList.add(cls)
+	if (cls) p.className = cls
 	p.textContent = text
 	gameLog.prepend(p)
 }
 
 function showResult(text, cls) {
 	resultDisplay.textContent = text
-	resultDisplay.className   = 'result-display ' + cls
+	resultDisplay.className = 'result-display ' + cls
 	resultDisplay.classList.remove('hidden')
 }
 
-function setActionState(active, dealing) {
-	btnHit.disabled  = !active; btnStay.disabled = !active
-	btnDeal.classList.toggle('hidden', !dealing)
-	btnHit.classList.toggle('hidden',   dealing)
-	btnStay.classList.toggle('hidden',  dealing)
+function setActions(canAct) {
+	btnHit.disabled = btnStay.disabled = !canAct
 }
 
-function startRound() {
-	handler.deck.reset(); handler.deck.shuffle()
-	handler.playerHand = [handler.deck.cards.pop(), handler.deck.cards.pop()]
-	handler.dealerHand = [handler.deck.cards.pop(), handler.deck.cards.pop()]
-	roundCount++
-	roundLabel.textContent = `Round ${roundCount}`
-	resultDisplay.classList.add('hidden')
-	handler.renderCards(handler.dealerCardsEl, handler.dealerHand, true)
-	handler.renderCards(handler.playerCardsEl, handler.playerHand)
-	handler.updateValue(handler.dealerValueEl, handler.dealerHand, true)
-	handler.updateValue(handler.playerValueEl, handler.playerHand)
-	setActionState(true, false)
-	addLog(`— Round ${roundCount} —`, 'log-round')
-	if (handler.getValue(handler.playerHand) === 21) { addLog('Blackjack!', 'log-win'); endRound() }
+function escHtml(s) {
+	return String(s).replace(/[&<>"']/g, c =>
+		({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'": '&#39;' }[c]))
 }
 
-function endRound() {
-	handler.renderCards(handler.dealerCardsEl, handler.dealerHand)
-	handler.dealerPlay()
-	handler.renderCards(handler.dealerCardsEl, handler.dealerHand)
-	handler.updateValue(handler.dealerValueEl, handler.dealerHand)
-	handler.updateValue(handler.playerValueEl, handler.playerHand)
-	setActionState(false, true)
-	const pv = handler.getValue(handler.playerHand)
-	const dv = handler.getValue(handler.dealerHand)
-	if      (pv > 21)             { showResult('Bust — Dealer Wins', 'lose'); addLog('You bust.', 'log-action') }
-	else if (dv > 21 || pv > dv) { showResult('You Win!', 'win');    LocalPlayerData.giveWins();        addLog(`You win — ${pv} vs ${dv}`, 'log-win') }
-	else if (pv === dv)           { showResult('Push', 'push');               addLog(`Push — ${pv} each`) }
-	else                          { showResult('Dealer Wins', 'lose');        addLog(`Dealer wins — ${dv} vs ${pv}`, 'log-action') }
+// ── Opponent seats ──
+function buildOpponentSeats() {
+	oppRow.innerHTML = ''
+	for (let i = 0; i < playerCount; i++) {
+		if (i === myPlayerIndex) continue
+		const p = players[i] || {}
+		const seat = document.createElement('div')
+		seat.className = 'opponent-seat'
+		seat.id = `opp-seat-${i}`
+		seat.innerHTML =
+			`<div class="opp-name">${escHtml(p.name || `Player ${i}`)}</div>` +
+			`<div class="opp-cards" id="opp-cards-${i}"></div>` +
+			`<div class="opp-state" id="opp-state-${i}"></div>`
+		oppRow.appendChild(seat)
+	}
 }
 
-btnPlay.addEventListener('click', () => {
-	playerNameEl.textContent = playerName || 'Player'
+function updateOpponentSeat(i) {
+	const p = players[i]; if (!p) return
+	const cardsEl = document.getElementById(`opp-cards-${i}`)
+	const stateEl = document.getElementById(`opp-state-${i}`)
+	if (cardsEl && p.hand) {
+		cardsEl.innerHTML = ''
+		p.hand.forEach(c => cardsEl.appendChild(makeCardEl(c)))
+	}
+	if (stateEl) {
+		stateEl.textContent = p.state !== 'playing' ? p.state : ''
+		stateEl.className = `opp-state${p.state !== 'playing' ? ` state-${p.state}` : ''}`
+	}
+}
+
+// ── Lobby helpers ──
+function addLobbyEntry(name, isSelf = false) {
+	const li = document.createElement('li')
+	li.className = `lobby-player${isSelf ? ' self' : ''}`
+	li.innerHTML = `<span>${escHtml(name)}${isSelf ? ' <em style="opacity:.4">(you)</em>' : ''}</span>`
+	lobbyList.appendChild(li)
+}
+
+function refreshCount() {
+	const n = lobbyList.children.length
+	lobbyCount.textContent = `${n} / ${MAX_PLAYERS} players`
+	if (btnStart) btnStart.textContent = `Start Game (${n})`
+}
+
+// ── Game view init ──
+function initGameView() {
 	viewLobby.classList.add('hidden')
 	viewGame.classList.remove('hidden')
-	startRound()
-})
-btnHit.addEventListener('click', () => {
-	handler.hit(handler.playerHand)
-	handler.renderCards(handler.playerCardsEl, handler.playerHand)
-	handler.updateValue(handler.playerValueEl, handler.playerHand)
-	addLog('Hit.', 'log-action')
-	if (handler.getValue(handler.playerHand) >= 21) endRound()
-})
-btnStay.addEventListener('click', () => { addLog('Stay.', 'log-action'); endRound() })
-btnDeal.addEventListener('click', startRound)
+	playerNameEl.textContent = myName
+	if (playerCount > 1) buildOpponentSeats()
+}
+
+// ── Host: deal new round ──
+function hostStartRound() {
+	btnDeal.classList.add('hidden')
+	btnNextRound.classList.add('hidden')
+	btnHit.classList.remove('hidden')
+	btnStay.classList.remove('hidden')
+	resultDisplay.classList.add('hidden')
+	roundCount++
+
+	handler.deck.reset()
+	handler.deck.shuffle()
+	handler.dealerHand = [handler.deck.cards.pop(), handler.deck.cards.pop()]
+
+	for (const p of gamePlayers) {
+		p.hand = [handler.deck.cards.pop(), handler.deck.cards.pop()]
+		p.state = 'playing'
+	}
+
+	addLog(`— Round ${roundCount} —`, 'log-round')
+	hostSyncAndBroadcast(false)
+
+	// Auto-stay anyone dealt 21
+	let anyBlackjack = false
+	for (const p of gamePlayers) {
+		if (p.state === 'playing' && handler.getValue(p.hand) === 21) {
+			p.state = 'stayed'
+			anyBlackjack = true
+			addLog(`${p.name} — Blackjack!`, 'log-win')
+		}
+	}
+	if (anyBlackjack) {
+		hostSyncAndBroadcast(false)
+		checkAllDone()
+	}
+}
+
+// ── Host: sync and broadcast state ──
+function syncPlayers() {
+	players = gamePlayers.map(p => ({
+		name: p.name,
+		state: p.state,
+		hand: p.hand ? p.hand.map(c => ({ label: c.label, suit: c.suit })) : []
+	}))
+}
+
+function hostSyncAndBroadcast(revealDealer) {
+	syncPlayers()
+	const msg = {
+		type: 'blackjackState',
+		players,
+		dealerHand: revealDealer
+			? handler.dealerHand.map(c => ({ label: c.label, suit: c.suit }))
+			: [{ label: handler.dealerHand[0].label, suit: handler.dealerHand[0].suit }],
+		dealerRevealed: revealDealer,
+		roundCount
+	}
+	if (network) network.broadcastObject(msg)
+	applyGameState(msg)
+}
+
+// ── Host: handle a player's hit/stay ──
+function hostHandleAction(playerIndex, action) {
+	const p = gamePlayers[playerIndex]
+	if (!p || p.state !== 'playing') return
+
+	if (action === 'hit') {
+		p.hand.push(handler.deck.cards.pop())
+		const val = handler.getValue(p.hand)
+		if (val >= 21) p.state = 'bust'
+		addLog(`${p.name} hit.${val > 21 ? ' Bust!' : ''}`, 'log-action')
+	} else {
+		p.state = 'stayed'
+		addLog(`${p.name} stayed.`, 'log-action')
+	}
+
+	hostSyncAndBroadcast(false)
+	checkAllDone()
+}
+
+function checkAllDone() {
+	if (!gamePlayers.every(p => p.state !== 'playing')) return
+	handler.dealerPlay()
+	hostSyncAndBroadcast(true)
+	hostBroadcastResults()
+}
+
+function hostBroadcastResults() {
+	const dv = handler.getValue(handler.dealerHand)
+	const results = gamePlayers.map((p, i) => {
+		const pv = handler.getValue(p.hand)
+		let outcome
+		if      (pv > 21)             outcome = 'bust'
+		else if (dv > 21 || pv > dv)  outcome = 'win'
+		else if (pv === dv)            outcome = 'push'
+		else                           outcome = 'lose'
+		return { playerIndex: i, outcome }
+	})
+	const msg = { type: 'blackjackResult', results, dealerValue: dv }
+	if (network) network.broadcastObject(msg)
+	applyResults(msg)
+}
+
+// ── Client: render incoming game state ──
+function applyGameState(msg) {
+	players = msg.players
+	roundLabel.textContent = `Round ${msg.roundCount || roundCount}`
+	resultDisplay.classList.add('hidden')
+
+	// Dealer: show sent card(s) + a face-down placeholder before reveal
+	handler.dealerCardsEl.innerHTML = ''
+	msg.dealerHand.forEach(c => handler.dealerCardsEl.appendChild(makeCardEl(c)))
+	if (!msg.dealerRevealed) handler.dealerCardsEl.appendChild(makeCardEl(null, true))
+	handler.updateValue(handler.dealerValueEl, msg.dealerHand, !msg.dealerRevealed)
+
+	// My hand
+	const me = players[myPlayerIndex]
+	if (me?.hand) {
+		handler.renderCards(handler.playerCardsEl, me.hand)
+		handler.updateValue(handler.playerValueEl, me.hand)
+		setActions(me.state === 'playing')
+	}
+
+	// Opponent seats
+	for (let i = 0; i < players.length; i++) {
+		if (i !== myPlayerIndex) updateOpponentSeat(i)
+	}
+}
+
+// ── Client: render round results ──
+function applyResults(msg) {
+	setActions(false)
+
+	const dv = msg.dealerValue
+	msg.results.forEach(r => {
+		const name = players[r.playerIndex]?.name || `Player ${r.playerIndex}`
+		if (r.playerIndex === myPlayerIndex) {
+			if      (r.outcome === 'win')  { showResult('You Win!', 'win'); LocalPlayerData.giveWins() }
+			else if (r.outcome === 'push')   showResult('Push', 'push')
+			else if (r.outcome === 'bust')   showResult('Bust', 'lose')
+			else                             showResult('Dealer Wins', 'lose')
+		}
+		addLog(`${name}: ${r.outcome} (dealer ${dv})`, r.outcome === 'win' ? 'log-win' : 'log-action')
+	})
+
+	if (isHost && isSolo) {
+		btnHit.classList.add('hidden')
+		btnStay.classList.add('hidden')
+		btnDeal.classList.remove('hidden')
+	} else if (isHost && !isSolo) {
+		btnNextRound.classList.remove('hidden')
+	}
+}
+
+// ── Send hit/stay to host ──
+function playerAction(action) {
+	if (isHost) {
+		hostHandleAction(myPlayerIndex, action)
+	} else {
+		try { network.sendObject({ type: 'blackjackAction', action, playerIndex: myPlayerIndex }, hostId) } catch {}
+	}
+}
+
+btnHit.addEventListener('click',  () => playerAction('hit'))
+btnStay.addEventListener('click', () => playerAction('stay'))
+
+// ── Solo mode ──
+if (isSolo) {
+	document.getElementById('lobby-btns-multi').classList.add('hidden')
+	document.getElementById('lobby-btns-solo').classList.remove('hidden')
+	document.getElementById('lobby-player-list').classList.add('hidden')
+	document.getElementById('lobby-count').classList.add('hidden')
+	document.getElementById('lobby-status').classList.add('hidden')
+
+	document.getElementById('btn-play').onclick = () => {
+		isHost = true
+		myPlayerIndex = 0
+		playerCount = 1
+		gamePlayers = [{ name: myName, state: 'playing', hand: [], send: () => {} }]
+		players = [{ name: myName, state: 'playing', hand: [] }]
+		initGameView()
+		hostStartRound()
+	}
+
+	btnDeal.addEventListener('click', hostStartRound)
+}
+
+// ── Multiplayer mode ──
+if (!isSolo) {
+	network = await constructNetworkAPI(signalServerAddress, roomId)
+	addLobbyEntry(myName, true)
+	refreshCount()
+	lobbyStatus.textContent = 'Connected. Create a game or wait for a host.'
+
+	network.onmessage = (ev) => {
+		const msg = JSON.parse(ev.data)
+		switch (msg.type) {
+
+			case 'blackjackStart':
+				if (hostId || isHost) break
+				hostId = msg.from
+				btnCreate.disabled = true
+				lobbyStatus.textContent = 'Joining…'
+				network.sendObject({ type: 'blackjackJoin', name: myName }, hostId)
+				break
+
+			case 'blackjackJoin':
+				if (!isHost || gamePlayers.length >= MAX_PLAYERS) break
+				{
+					const peerId = msg.from
+					const p = {
+						name: msg.name || peerId.slice(0, 8),
+						state: 'waiting',
+						hand: [],
+						send: obj => { try { network.sendObject(obj, peerId) } catch {} }
+					}
+					gamePlayers.push(p)
+					players.push({ name: p.name, state: p.state, hand: [] })
+					addLobbyEntry(p.name)
+					refreshCount()
+					if (gamePlayers.length >= 2) btnStart.disabled = false
+					lobbyStatus.textContent = gamePlayers.length >= MAX_PLAYERS
+						? 'Table full!'
+						: `${gamePlayers.length} player(s) ready…`
+				}
+				break
+
+			case 'blackjackInit':
+				myPlayerIndex = msg.playerIndex
+				playerCount   = msg.players.length
+				players       = msg.players
+				hostId        = msg.from
+				initGameView()
+				break
+
+			case 'blackjackState':
+				applyGameState(msg)
+				break
+
+			case 'blackjackResult':
+				applyResults(msg)
+				break
+
+			case 'blackjackAction':
+				if (isHost) hostHandleAction(msg.playerIndex, msg.action)
+				break
+		}
+	}
+
+	btnCreate.onclick = () => {
+		if (isHost || hostId) return
+		isHost = true
+		btnCreate.disabled = true
+		myPlayerIndex = 0
+		gamePlayers = [{ name: myName, state: 'waiting', hand: [], send: () => {} }]
+		players = [{ name: myName, state: 'waiting', hand: [] }]
+		network.broadcastObject({ type: 'blackjackStart' })
+		lobbyStatus.textContent = 'Waiting for players… (need 1 more to start)'
+	}
+
+	btnStart.onclick = () => {
+		if (!isHost || gamePlayers.length < 2) return
+		playerCount = gamePlayers.length
+		players = gamePlayers.map(p => ({ name: p.name, state: 'waiting', hand: [] }))
+		for (let i = 1; i < gamePlayers.length; i++) {
+			gamePlayers[i].send({ type: 'blackjackInit', playerIndex: i, players })
+		}
+		initGameView()
+		hostStartRound()
+	}
+
+	btnNextRound.onclick = () => { if (isHost) hostStartRound() }
+}

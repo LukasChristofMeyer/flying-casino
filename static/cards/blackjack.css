@@ -60,6 +60,46 @@
 	margin-bottom: 12px;
 }
 
+.lobby-count {
+	font-family: 'Cinzel', serif;
+	font-size: 12px;
+	letter-spacing: 2px;
+	color: rgba(201,168,76,0.6);
+	text-transform: uppercase;
+	margin-bottom: 8px;
+}
+
+.lobby-player-list {
+	list-style: none;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	min-height: 72px;
+	margin-bottom: 10px;
+}
+
+.lobby-player {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: rgba(0,0,0,0.35);
+	border: 1px solid rgba(201,168,76,0.18);
+	border-radius: 3px;
+	padding: 8px 16px;
+	color: var(--ivory);
+	font-size: 15px;
+}
+.lobby-player.self { border-color: rgba(201,168,76,0.42); background: rgba(0,0,0,0.5); }
+
+.lobby-status {
+	font-size: 13px;
+	color: rgba(245,240,224,0.3);
+	font-style: italic;
+	text-align: center;
+	margin-bottom: 12px;
+}
+
 .lobby-btns { display: flex; gap: 10px; }
 
 .lobby-btn {
@@ -71,12 +111,21 @@
 	cursor: none;
 	transition: box-shadow 0.2s, background 0.15s, color 0.15s;
 }
+.lobby-btn-create {
+	background: linear-gradient(135deg, var(--felt-light), var(--felt-dark));
+	border: 1.5px solid var(--gold);
+	color: var(--ivory);
+}
+.lobby-btn-create:hover:not(:disabled) { box-shadow: 0 0 12px rgba(200,160,50,0.3); }
+.lobby-btn-create:disabled { opacity: 0.3; }
+
 .lobby-btn-start {
 	background: transparent;
 	border: 1.5px solid var(--gold);
 	color: var(--gold);
 }
-.lobby-btn-start:hover { background: var(--gold); color: #080808; }
+.lobby-btn-start:hover:not(:disabled) { background: var(--gold); color: #080808; }
+.lobby-btn-start:disabled { opacity: 0.28; }
 
 /* ── GAME VIEW ── */
 #view-game {
@@ -238,12 +287,55 @@
 }
 .btn-stay:hover:not(:disabled) { background: var(--gold); color: #080808; }
 
-.btn-deal {
+.btn-deal, .btn-next {
 	background: transparent;
 	border: 1.5px solid rgba(200,160,70,0.4);
 	color: rgba(200,160,70,0.7);
 }
-.btn-deal:hover { border-color: var(--gold); color: var(--gold); }
+.btn-deal:hover, .btn-next:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── OPPONENTS ── */
+.opponents-row {
+	width: 100%;
+	display: flex;
+	gap: 14px;
+	justify-content: center;
+	flex-wrap: wrap;
+	min-height: 0;
+}
+
+.opponent-seat {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	background: rgba(0,0,0,0.25);
+	border: 1px solid rgba(201,168,76,0.15);
+	border-radius: 6px;
+	padding: 6px 14px;
+	min-width: 110px;
+}
+
+.opp-name {
+	font-family: 'Cinzel', serif;
+	font-size: 12px;
+	letter-spacing: 1px;
+	color: rgba(245,240,224,0.75);
+}
+
+.opp-cards { display: flex; gap: 3px; }
+
+.opp-state {
+	font-size: 11px;
+	font-family: 'Cinzel', serif;
+	letter-spacing: 1px;
+	min-height: 15px;
+	color: rgba(245,240,224,0.3);
+	text-transform: uppercase;
+}
+.opp-state.state-stayed { color: rgba(100,210,100,0.65); }
+.opp-state.state-bust   { color: rgba(220,80,80,0.55); }
+.opp-state.state-win    { color: var(--gold-light); font-weight: 700; }
 
 /* ── LOG ── */
 .game-log {
