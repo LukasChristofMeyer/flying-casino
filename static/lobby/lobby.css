@@ -1,12 +1,12 @@
 /* Lobby-specific overrides and additions on top of main-page.css */
 
-/* ── LAYOUT — constrain main content width for lobby ── */
+/* ── LAYOUT ── */
 .main-container {
 	z-index: 20;
 }
 
 .main {
-	width: 460px;
+	width: 552px;
 }
 
 .hidden { display: none !important; }
@@ -14,7 +14,7 @@
 /* ── SHARED: title and subtitle ── */
 .lobby-title {
 	font-family: 'Playfair Display', serif;
-	font-size: 34px;
+	font-size: 40px;
 	font-weight: 900;
 	color: var(--gold-light);
 	letter-spacing: 2px;
@@ -29,13 +29,13 @@
 }
 
 .lobby-title-sm {
-	font-size: 24px;
+	font-size: 29px;
 	margin-bottom: 10px;
 	text-align: left;
 }
 
 .lobby-subtitle {
-	font-size: 12px;
+	font-size: 14px;
 	color: rgba(210,210,200,0.5);
 	letter-spacing: 2px;
 	font-style: italic;
@@ -46,8 +46,8 @@
 /* ── BACK LINK ── */
 .back-link {
 	font-family: 'Open Sans', sans-serif;
-	font-size: 11px;
-	color: rgba(200,160,70,0.45);
+	font-size: 13px;
+	color: rgba(200,160,70,0.8);
 	text-decoration: none;
 	letter-spacing: 2px;
 	transition: color 0.2s;
@@ -68,16 +68,16 @@
 
 .game-cards {
 	display: flex;
-	gap: 12px;
+	gap: 14px;
 	margin-bottom: 18px;
 }
 
 .game-card {
-	width: 138px;
+	width: 166px;
 	background: rgba(0,0,0,0.45);
 	border: 1px solid rgba(201,168,76,0.28);
 	border-radius: 4px;
-	padding: 14px 12px;
+	padding: 17px 14px;
 	cursor: none;
 	text-align: center;
 	transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
@@ -97,7 +97,7 @@
 }
 
 .card-suit {
-	font-size: 22px;
+	font-size: 26px;
 	color: var(--gold);
 	margin-bottom: 8px;
 	text-shadow: 0 0 8px rgba(201,168,76,0.5);
@@ -105,7 +105,7 @@
 
 .card-name {
 	font-family: 'Cinzel', serif;
-	font-size: 10px;
+	font-size: 12px;
 	letter-spacing: 2px;
 	text-transform: uppercase;
 	color: var(--ivory);
@@ -113,7 +113,7 @@
 }
 
 .card-desc {
-	font-size: 11px;
+	font-size: 13px;
 	color: rgba(245,240,224,0.45);
 	line-height: 1.4;
 }
@@ -128,16 +128,16 @@
 
 .mode-cards {
 	display: flex;
-	gap: 16px;
+	gap: 19px;
 	margin-bottom: 18px;
 }
 
 .mode-card {
-	width: 160px;
+	width: 192px;
 	background: rgba(0,0,0,0.45);
 	border: 1px solid rgba(201,168,76,0.28);
 	border-radius: 4px;
-	padding: 20px 14px;
+	padding: 24px 17px;
 	cursor: none;
 	text-align: center;
 	transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
@@ -151,7 +151,7 @@
 }
 
 .mode-icon {
-	font-size: 22px;
+	font-size: 26px;
 	color: var(--gold);
 	margin-bottom: 8px;
 	text-shadow: 0 0 8px rgba(201,168,76,0.5);
@@ -159,7 +159,7 @@
 
 .mode-name {
 	font-family: 'Cinzel', serif;
-	font-size: 10px;
+	font-size: 12px;
 	letter-spacing: 2px;
 	text-transform: uppercase;
 	color: var(--ivory);
@@ -167,7 +167,7 @@
 }
 
 .mode-desc {
-	font-size: 11px;
+	font-size: 13px;
 	color: rgba(245,240,224,0.45);
 	line-height: 1.4;
 }
@@ -177,7 +177,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-	width: 460px;
+	width: 552px;
 }
 
 .room-header {
@@ -188,7 +188,7 @@
 }
 
 .player-tag {
-	font-size: 11px;
+	font-size: 13px;
 	color: rgba(245,240,224,0.35);
 	letter-spacing: 1.5px;
 }
@@ -196,7 +196,7 @@
 /* Create row */
 .create-row {
 	display: flex;
-	gap: 8px;
+	gap: 10px;
 	margin-bottom: 14px;
 }
 
@@ -206,9 +206,9 @@
 	border: 1.5px solid rgba(200,160,70,0.3);
 	border-radius: 3px;
 	color: var(--ivory);
-	padding: 8px 14px;
+	padding: 10px 17px;
 	font-family: 'Open Sans', sans-serif;
-	font-size: 13px;
+	font-size: 15px;
 	outline: none;
 	letter-spacing: 0.5px;
 	transition: border-color 0.2s;
@@ -224,9 +224,9 @@
 	border-radius: 3px;
 	color: var(--ivory);
 	font-family: 'Cinzel', serif;
-	font-size: 10px;
+	font-size: 12px;
 	letter-spacing: 2px;
-	padding: 8px 16px;
+	padding: 10px 19px;
 	cursor: none;
 	white-space: nowrap;
 	transition: box-shadow 0.2s;
@@ -246,14 +246,14 @@
 
 .open-label {
 	font-family: 'Cinzel', serif;
-	font-size: 9px;
+	font-size: 11px;
 	letter-spacing: 3px;
 	text-transform: uppercase;
 	color: rgba(201,168,76,0.6);
 }
 
 .open-count {
-	font-size: 11px;
+	font-size: 13px;
 	color: rgba(245,240,224,0.3);
 }
 
@@ -261,7 +261,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
-	max-height: 130px;
+	max-height: 156px;
 	overflow-y: auto;
 }
 
@@ -273,8 +273,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	padding: 9px 14px;
+	gap: 14px;
+	padding: 11px 17px;
 	background: rgba(0,0,0,0.35);
 	border: 1px solid rgba(201,168,76,0.2);
 	border-radius: 3px;
@@ -285,12 +285,12 @@
 
 .room-card-name {
 	font-family: 'Playfair Display', serif;
-	font-size: 14px;
+	font-size: 17px;
 	color: var(--ivory);
 }
 
 .room-card-meta {
-	font-size: 10px;
+	font-size: 12px;
 	color: rgba(245,240,224,0.35);
 	margin-top: 2px;
 	letter-spacing: 0.3px;
@@ -298,13 +298,13 @@
 
 .btn-join {
 	flex-shrink: 0;
-	padding: 5px 14px;
+	padding: 6px 17px;
 	background: transparent;
 	border: 1px solid var(--gold);
 	border-radius: 2px;
 	color: var(--gold);
 	font-family: 'Cinzel', serif;
-	font-size: 9px;
+	font-size: 11px;
 	letter-spacing: 2px;
 	text-transform: uppercase;
 	text-decoration: none;
@@ -319,7 +319,7 @@
 }
 
 .room-empty {
-	font-size: 11px;
+	font-size: 13px;
 	color: rgba(245,240,224,0.25);
 	font-style: italic;
 	text-align: center;

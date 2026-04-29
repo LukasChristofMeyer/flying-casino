@@ -1,10 +1,10 @@
 /* ── VIDEO POKER LAYOUT ── */
-.main { width: 560px; }
+.main { width: 672px; }
 
 /* ── TITLE ── */
 .vp-title {
 	font-family: 'Playfair Display', serif;
-	font-size: 30px;
+	font-size: 36px;
 	font-weight: 900;
 	color: var(--gold-light);
 	letter-spacing: 2px;
@@ -21,15 +21,15 @@
 .payout-table {
 	display: grid;
 	grid-template-columns: repeat(4, 1fr);
-	gap: 5px;
-	margin-bottom: 10px;
+	gap: 6px;
+	margin-bottom: 12px;
 }
 
 .payout-item {
 	background: rgba(0,0,0,0.28);
 	border: 1px solid rgba(201,168,76,0.18);
 	border-radius: 3px;
-	padding: 5px 4px;
+	padding: 6px 5px;
 	text-align: center;
 	transition: border-color 0.2s, background 0.2s;
 }
@@ -41,7 +41,7 @@
 
 .payout-hand {
 	font-family: 'Cinzel', serif;
-	font-size: 7.5px;
+	font-size: 9px;
 	letter-spacing: 0.5px;
 	text-transform: uppercase;
 	color: rgba(245,240,224,0.42);
@@ -50,24 +50,24 @@
 
 .payout-mult {
 	font-family: 'Playfair Display', serif;
-	font-size: 13px;
+	font-size: 15px;
 	color: var(--gold-light);
 }
 
 /* ── CARD ROW ── */
 .card-row {
 	display: flex;
-	gap: 8px;
+	gap: 10px;
 	justify-content: center;
 	margin-bottom: 6px;
 }
 
 /* ── PLAYING CARD ── */
 .playing-card {
-	width: 84px;
-	height: 116px;
+	width: 100px;
+	height: 139px;
 	background: linear-gradient(145deg, #fafaf5, #ede9da);
-	border-radius: 6px;
+	border-radius: 7px;
 	border: 2px solid rgba(200,200,185,0.8);
 	box-shadow:
 		0 4px 14px rgba(0,0,0,0.55),
@@ -111,16 +111,16 @@
 	align-items: center;
 	line-height: 1.1;
 }
-.card-corner.tl { top: 5px; left: 7px; }
-.card-corner.br { bottom: 5px; right: 7px; transform: rotate(180deg); }
+.card-corner.tl { top: 6px; left: 8px; }
+.card-corner.br { bottom: 6px; right: 8px; transform: rotate(180deg); }
 
 .card-value {
 	font-family: 'Playfair Display', serif;
-	font-size: 16px;
+	font-size: 19px;
 	font-weight: 900;
 	line-height: 1;
 }
-.card-suit-pip { font-size: 11px; line-height: 1; }
+.card-suit-pip { font-size: 13px; line-height: 1; }
 
 /* Center suit watermark */
 .card-center {
@@ -129,7 +129,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 40px;
+	font-size: 48px;
 	opacity: 0.1;
 	pointer-events: none;
 }
@@ -152,11 +152,11 @@
 	background: linear-gradient(to bottom, rgba(21,85,35,0.92), rgba(10,50,18,0.97));
 	color: var(--gold-light);
 	font-family: 'Cinzel', serif;
-	font-size: 8.5px;
+	font-size: 10px;
 	letter-spacing: 3px;
 	text-transform: uppercase;
 	text-align: center;
-	padding: 4px 0;
+	padding: 5px 0;
 	display: none;
 }
 .playing-card.held .hold-label { display: block; }
@@ -170,12 +170,12 @@
 
 /* ── HINT ── */
 .card-hint {
-	font-size: 10px;
+	font-size: 12px;
 	color: rgba(245,240,224,0.28);
 	letter-spacing: 1.5px;
 	font-style: italic;
 	text-align: center;
-	min-height: 14px;
+	min-height: 16px;
 	margin-bottom: 8px;
 }
 
@@ -183,25 +183,25 @@
 .controls-row {
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 14px;
 	justify-content: center;
 	margin-bottom: 8px;
 }
 
 .chip-display {
 	font-family: 'Cinzel', serif;
-	font-size: 11px;
+	font-size: 13px;
 	letter-spacing: 1.5px;
 	color: rgba(245,240,224,0.55);
 	white-space: nowrap;
 }
-#chip-count { color: var(--gold-light); font-size: 15px; }
+#chip-count { color: var(--gold-light); font-size: 18px; }
 
 .bet-input {
 	font-family: 'Open Sans', sans-serif;
-	font-size: 13px;
-	padding: 7px 10px;
-	width: 76px;
+	font-size: 15px;
+	padding: 8px 12px;
+	width: 91px;
 	border-radius: 3px;
 	border: 1.5px solid rgba(200,160,70,0.35);
 	background: rgba(0,0,0,0.4);
@@ -219,10 +219,10 @@
 
 .deal-btn {
 	font-family: 'Cinzel', serif;
-	font-size: 12px;
+	font-size: 14px;
 	letter-spacing: 3px;
 	text-transform: uppercase;
-	padding: 9px 26px;
+	padding: 11px 31px;
 	border-radius: 3px;
 	cursor: none;
 	position: relative;
@@ -250,10 +250,10 @@
 /* ── RESULT ── */
 .result-msg {
 	font-family: 'Playfair Display', serif;
-	font-size: 14px;
+	font-size: 17px;
 	color: var(--gold-light);
 	text-align: center;
-	min-height: 18px;
+	min-height: 22px;
 	letter-spacing: 0.5px;
 	text-shadow: 0 0 12px rgba(200,160,50,0.5);
 	margin-bottom: 6px;
@@ -262,8 +262,8 @@
 /* ── BACK LINK ── */
 .back-link {
 	font-family: 'Open Sans', sans-serif;
-	font-size: 11px;
-	color: rgba(200,160,70,0.35);
+	font-size: 13px;
+	color: rgba(200,160,70,0.8);
 	text-decoration: none;
 	letter-spacing: 2px;
 	transition: color 0.2s;
