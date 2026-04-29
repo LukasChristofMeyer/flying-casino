@@ -258,7 +258,7 @@ function syncPlayers() {
 	players = gamePlayers.map(p => ({
 		name: p.name,
 		state: p.state,
-		hand: p.hand ? p.hand.map(c => ({ label: c.label, suit: c.suit })) : []
+		hand: p.hand ? p.hand.map(c => ({ label: c.label, suit: c.suit, value: c.value })) : []
 	}))
 }
 
@@ -268,8 +268,8 @@ function hostSyncAndBroadcast(revealDealer) {
 		type: 'blackjackState',
 		players,
 		dealerHand: revealDealer
-			? handler.dealerHand.map(c => ({ label: c.label, suit: c.suit }))
-			: [{ label: handler.dealerHand[0].label, suit: handler.dealerHand[0].suit }],
+			? handler.dealerHand.map(c => ({ label: c.label, suit: c.suit, value: c.value }))
+			: [{ label: handler.dealerHand[0].label, suit: handler.dealerHand[0].suit, value: handler.dealerHand[0].value }],
 		dealerRevealed: revealDealer,
 		roundCount
 	}
