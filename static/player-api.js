@@ -16,8 +16,16 @@ class LocalPlayerData {
 		return this.#chips;
 	}
 
+	giveChips(x) {
+		this.chips += x;
+	}
+
 	getWins() {
 		return this.#chips;
+	}
+
+	giveWins() {
+		this.wins += 1;
 	}
 }
 
