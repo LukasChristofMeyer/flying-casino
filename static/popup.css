@@ -11,7 +11,8 @@
 .popup {
   visibility: hidden;
   position: absolute;
-  bottom: 100px;
+  left: 50px;
+  bottom: 65px;
   height: 200px;
   width: 75px;
   background-color: beige;
