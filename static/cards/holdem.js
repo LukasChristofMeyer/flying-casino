@@ -1,6 +1,6 @@
 import { TexasHoldEm, Player, pokerHandType, pokerHandValueTable } from "./poker.js"
 import { constructNetworkAPI } from "../network/network.js"
-import { retrievePlayerData, LocalPlayerData } from "../player-api.js"
+import { retrievePlayerData } from "../player-api.js"
 import { signalServerAddress } from "../flying-casino.js"
 
 const STARTING_CHIPS = 1000
