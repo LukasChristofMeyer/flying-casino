@@ -197,7 +197,12 @@ function handler(socket, _request) {
 		switch (packet.type) {
 			case 'join':
 				const room = roomDict.get(packet.room);
-				if (room) {room.add(socketUuid, socket);}
+				if (room) {room.add(socketUuid, socket)} 
+				else {
+					await socket.send(json.dumps({"type": "denied"}))
+					socket.terminate() // You're trying to crash everyone, so scram!!!
+					return
+				}
 
 				socket.associatedRoom = room;
 
