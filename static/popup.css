@@ -11,10 +11,10 @@
 #popup {
   visibility: hidden;
   position: absolute;
-  left: 50px;
-  bottom: 65px;
-  height: 200px;
-  width: 75px;
+  left: 25px;
+  bottom: 50px;
+  height: 100px;
+  width: 100px;
   color: black;
   background-color: beige;
   font-family: 'Open Sans', sans-serif;
