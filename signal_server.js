@@ -45,13 +45,13 @@ class Room {
 	removeRoom() {roomDict.delete(this.id)}
 	beginTimeout() {
 		clearTimeout(this.timeout); // If there was another timeout, remove it. This is needed for cancellation.
-		this.timeout = setTimeout(() => removeRoom(), 180000); // Anyway, possibly resetting it for another three minutes is harmless
+		this.timeout = setTimeout(() => this.removeRoom(), 180000); // Anyway, possibly resetting it for another three minutes is harmless
 	}
 	cancelTimeout() {
 		clearTimeout(this.timeout);
 		// Despite the name, if you're here for 24 hours and do not do anything to cancelTimeOut, you should leave likely for your own sake
 		// This long period is reasonable; the only interaction rooms have is the start of P2P interactions, so you could play a while
-		this.timeout = setTimeout(() => removeRoom(), 86400000)
+		this.timeout = setTimeout(() => this.removeRoom(), 86400000)
 
 		// Notably, this also readds the room to the dict, in case it already did time out and was removed.
 		if (!roomDict.has(this.id)) {
