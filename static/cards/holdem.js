@@ -80,6 +80,7 @@ let currentBet = STARTING_BET
 let toPlayIndex = -1
 let blindIndex	= 0
 let gamePlayers = []	// host-side Player objects
+let nextRoundTimer = null
 
 // ── DOM ────────────────────────────────────────────────────────────────────
 const viewLobby		= document.getElementById('view-lobby')
@@ -93,7 +94,8 @@ const btnFold			= document.getElementById('btn-fold')
 const btnCall			= document.getElementById('btn-call')
 const btnRaise		 = document.getElementById('btn-raise')
 const raiseInput	 = document.getElementById('raise-input')
-const btnPlayAgain = document.getElementById('btn-play-again')
+const btnPlayAgain  = document.getElementById('btn-play-again')
+const btnOtherGame  = document.getElementById('btn-other-game')
 const oppRow			 = document.getElementById('opponents-row')
 const commCardsEl	= document.getElementById('community-cards')
 const yourTurnHint = document.getElementById('your-turn-hint')
@@ -378,8 +380,10 @@ function receiveGameMessage(msg) {
 					const iWon = gamePlayers[myPlayerIndex].chipsRemaining > 0
 					log(iWon ? '🎉 You win the game!' : 'Game over — you ran out of chips.', 'log-win')
 					btnPlayAgain.classList.remove('hidden')
+					btnOtherGame.classList.remove('hidden')
 				} else {
-					startNewRound()
+					btnOtherGame.classList.remove('hidden')
+					nextRoundTimer = setTimeout(startNewRound, 3000)
 				}
 			}
 			break
@@ -409,10 +413,11 @@ function initGameView() {
 	document.getElementById('my-name').textContent	= myName
 	document.getElementById('my-chips').textContent = players[myPlayerIndex]?.chipsRemaining ?? STARTING_CHIPS
 	buildOpponentSeats()
-	if (isHost && !isSolo) { startNewRound() }
 }
 
 function startNewRound() {
+	clearTimeout(nextRoundTimer)
+	btnOtherGame.classList.add('hidden')
 	commCards = []; myHand = []; toPlayIndex = -1
 	document.getElementById('my-cards').innerHTML			 = ''
 	document.getElementById('my-hand-type').textContent = ''
@@ -541,9 +546,15 @@ btnRaise.onclick = () => {
 }
 btnPlayAgain.onclick = () => {
 	btnPlayAgain.classList.add('hidden')
+	btnOtherGame.classList.add('hidden')
 	gamePlayers.forEach(p => { p.chipsRemaining = STARTING_CHIPS; p.chipsBet = 0; p.state = 'none'; p.hand = null })
 	players = gamePlayers.map(p => pdata(p))
 	blindIndex = 0
+	startNewRound()
+}
+btnOtherGame.onclick = () => {
+	if (!isHost) return
+	clearTimeout(nextRoundTimer)
 	startNewRound()
 }
 
