@@ -52,13 +52,15 @@ class PokerAI extends Player {
 		const full	= [...this._hand, ...this._comm]
 		const ht		= full.length >= 2 ? pokerHandType(full) : 'High Card'
 		const coeff = {
-			'High Card':10, 'Pair':6, 'Two Pair':5, 'Three of a Kind':4,
+			'High Card':8, 'Pair':6, 'Two Pair':5, 'Three of a Kind':4,
 			'Straight':3, 'Flush':3, 'Full House':2, 'Four of a Kind':1, 'Straight Flush':1
 		}[ht] ?? 10
 		const roll = Math.random() * coeff
 		if (roll <= 1 && this.chipsRemaining > 100)
 			this._act({type:'texasHoldEm', action:'raise', playerIndex:this.aiIndex, raise:50})
 		else if (roll <= 4)
+			this._act({type:'texasHoldEm', action:'call',	playerIndex:this.aiIndex})
+		else if (commCards.length < 3) 
 			this._act({type:'texasHoldEm', action:'call',	playerIndex:this.aiIndex})
 		else
 			this._act({type:'texasHoldEm', action:'fold',	playerIndex:this.aiIndex})
