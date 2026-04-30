@@ -283,7 +283,7 @@ app.post('/room-started', (request, response) => {
 
 	let room = roomDict.get(roomStartRequest.id);
 	room.started = true;
-	roomDict.remove(roomStartRequest.id)
+	roomDict.delete(roomStartRequest.id)
 
 	response.setHeader('Access-Control-Allow-Origin', '*');
 	response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
