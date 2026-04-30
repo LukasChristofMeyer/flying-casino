@@ -129,7 +129,6 @@ const viewGame     = document.getElementById('view-game')
 const lobbyStatus  = document.getElementById('lobby-status')
 const lobbyList    = document.getElementById('lobby-player-list')
 const lobbyCount   = document.getElementById('lobby-count')
-const btnCreate    = document.getElementById('btn-create')
 const btnStart     = document.getElementById('btn-start')
 const playerNameEl = document.getElementById('player-name-display')
 const btnHit       = document.getElementById('btn-hit')
@@ -399,7 +398,20 @@ if (!isSolo) {
 	network = await constructNetworkAPI(signalServerAddress, roomId)
 	addLobbyEntry(myName, true)
 	refreshCount()
-	lobbyStatus.textContent = 'Connected. Create a game or wait for a host.'
+
+	// Auto-determine host: first peer in the room becomes host
+	const isFirstInRoom = !Object.values(network.peers).some(p => p.connection !== null)
+	let announceInterval = null
+
+	if (isFirstInRoom) {
+		isHost = true; myPlayerIndex = 0
+		gamePlayers = [{ name: myName, state: 'waiting', hand: [], send: () => {} }]
+		players = [{ name: myName, state: 'waiting', hand: [] }]
+		lobbyStatus.textContent = 'Waiting for players…'
+		announceInterval = setInterval(() => network.broadcastObject({ type: 'blackjackStart' }), 1500)
+	} else {
+		lobbyStatus.textContent = 'Connecting to host…'
+	}
 
 	network.onmessage = (ev) => {
 		const msg = JSON.parse(ev.data)
@@ -408,7 +420,6 @@ if (!isSolo) {
 			case 'blackjackStart':
 				if (hostId || isHost) break
 				hostId = msg.from
-				btnCreate.disabled = true
 				lobbyStatus.textContent = 'Joining…'
 				network.sendObject({ type: 'blackjackJoin', name: myName }, hostId)
 				break
@@ -456,19 +467,9 @@ if (!isSolo) {
 		}
 	}
 
-	btnCreate.onclick = () => {
-		if (isHost || hostId) return
-		isHost = true
-		btnCreate.disabled = true
-		myPlayerIndex = 0
-		gamePlayers = [{ name: myName, state: 'waiting', hand: [], send: () => {} }]
-		players = [{ name: myName, state: 'waiting', hand: [] }]
-		network.broadcastObject({ type: 'blackjackStart' })
-		lobbyStatus.textContent = 'Waiting for players… (need 1 more to start)'
-	}
-
 	btnStart.onclick = () => {
 		if (!isHost || gamePlayers.length < 2) return
+		clearInterval(announceInterval)
 		playerCount = gamePlayers.length
 		players = gamePlayers.map(p => ({ name: p.name, state: 'waiting', hand: [] }))
 		for (let i = 1; i < gamePlayers.length; i++) {

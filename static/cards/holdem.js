@@ -88,7 +88,6 @@ let cumulativePot  = 0
 // ── DOM ────────────────────────────────────────────────────────────────────
 const viewLobby		= document.getElementById('view-lobby')
 const viewGame		 = document.getElementById('view-game')
-const btnCreate		= document.getElementById('btn-create')
 const btnStart		 = document.getElementById('btn-start')
 const lobbyStatus	= document.getElementById('lobby-status')
 const lobbyList		= document.getElementById('lobby-player-list')
@@ -487,7 +486,21 @@ if (!isSolo) {
 	network = await constructNetworkAPI(SIGNAL_URL, roomId)
 	addLobbyEntry(myName||'Player', STARTING_CHIPS, true)
 	refreshCount()
-	lobbyStatus.textContent = "Connected. Create a game or wait for a host."
+
+	// Auto-determine host: first peer in the room becomes host
+	const isFirstInRoom = !Object.values(network.peers).some(p => p.connection !== null)
+	let announceInterval = null
+
+	if (isFirstInRoom) {
+		isHost = true; myPlayerIndex = 0
+		const me = new Player(obj => receiveGameMessage(obj))
+		me.chipsRemaining = STARTING_CHIPS; me.name = myName
+		gamePlayers.push(me); players.push(pdata(me))
+		lobbyStatus.textContent = 'Waiting for players…'
+		announceInterval = setInterval(() => network.broadcastObject({type:'holdEmStart'}), 1500)
+	} else {
+		lobbyStatus.textContent = 'Connecting to host…'
+	}
 
 	network.onmessage = (ev) => {
 		const msg = JSON.parse(ev.data)
@@ -495,9 +508,8 @@ if (!isSolo) {
 
 			case 'holdEmStart':
 				if (hostId||isHost) break
-				hostId = msg.from; btnCreate.disabled = true
+				hostId = msg.from
 				lobbyStatus.textContent = 'Joining…'
-				if (!myName) myName = nameInputEl.value.trim()||'Player'
 				network.sendObject({type:'holdEmJoin', chips:STARTING_CHIPS, name:myName}, hostId)
 				break
 
@@ -532,20 +544,9 @@ if (!isSolo) {
 		}
 	}
 
-	btnCreate.onclick = () => {
-		if (isHost||hostId) return
-		isHost=true; btnCreate.disabled=true; gamePlayers=[]
-		myPlayerIndex=0
-		const me = new Player(obj => receiveGameMessage(obj))
-		me.chipsRemaining=STARTING_CHIPS; me.name=myName
-		gamePlayers.push(me); players.push(pdata(me))
-		network.broadcastObject({type:'holdEmStart'})
-		lobbyStatus.textContent='Waiting for players… (need 1 more)'
-		btnStart.textContent='Start Game (1)'
-	}
-
 	btnStart.onclick = () => {
 		if (!isHost||gamePlayers.length<2) return
+		clearInterval(announceInterval)
 		playerCount = gamePlayers.length
 		players		 = gamePlayers.map(p => pdata(p))
 		const pd		= gamePlayers.map(p => pdata(p))
