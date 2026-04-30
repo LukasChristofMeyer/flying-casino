@@ -1,7 +1,7 @@
 import { LocalPlayerData } from "./player-api.js";
 
-statHover = document.getElementsByClassName("statHover");
-popup = document.getElementsByClassName("popup");
+statHover = document.getElementById("statHover");
+popup = document.getElementbyId("popup");
 
 function showStats () {
     popup.innerHTML = "Name: " + LocalPlayerData.getName() + "<br>" + "Number of Wins: " + LocalPlayerData.getWins() + "<br>" + "Total Chips: " + LocalPlayerData.getChips();
