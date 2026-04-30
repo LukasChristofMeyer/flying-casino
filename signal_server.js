@@ -46,7 +46,9 @@ class Room {
 		clearTimeout(this.timeout); // If there was another timeout, remove it. This is needed for cancellation.
 		this.timeout = setTimeout(() => roomDict.delete(this.id), 180000); // Anyway, possibly resetting it for another three minutes is harmless
 	}
+
 	cancelTimeout() {
+		if (this.started) {return}
 		clearTimeout(this.timeout);
 		// Despite the name, if you're here for 24 hours and do not do anything to cancelTimeOut, you should leave likely for your own sake
 		// This long period is reasonable; the only interaction rooms have is the start of P2P interactions, so you could play a while
@@ -71,6 +73,8 @@ class Room {
 		/** Name of the game being played */
 		this.game = '';
 
+		this.started = false
+
 		this.connectedPeers = 0;
 
 		// If nothing stops us, this room will no longer be in the map in three minutes.
@@ -83,7 +87,8 @@ class Room {
 			id: this.id,
 			name: this.name,
 			creator: this.creator,
-			game: this.game
+			game: this.game,
+			started: this.started
 		}
 	}
 
@@ -93,6 +98,7 @@ class Room {
 	 * @returns {boolean} Whether the peer could be added
 	 */
 	add(uuid, socket) {
+		if(this.started) {return false}
 		// Should be game based (?)
 		if (this.connectedPeers >= 4)
 			return false;
@@ -262,6 +268,22 @@ app.post('/create-room', (request, response) => {
 	// Generate unique ID
 	while (roomDict.get(room.id = crypto.randomUUID()));
 	roomDict.set(room.id, room);
+
+	response.setHeader('Access-Control-Allow-Origin', '*');
+	response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+	response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+	// Only way to "close" a one sided request
+	response.send('');
+});
+
+app.post('/room-started', (request, response) => {
+	console.log('Received room creation request');
+
+	const roomStartRequest = JSON.parse(request.body);
+
+	let room = roomDict.get(roomStartRequest.id);
+	room.started = true;
+	roomDict.remove(roomStartRequest.id)
 
 	response.setHeader('Access-Control-Allow-Origin', '*');
 	response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
