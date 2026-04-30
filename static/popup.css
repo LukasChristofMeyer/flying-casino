@@ -8,7 +8,7 @@
   font-family: 'Open Sans', sans-serif;
 }
 
-#statHover #popup {
+#popup {
   visibility: hidden;
   position: absolute;
   left: 50px;
@@ -20,7 +20,7 @@
   font-family: 'Open Sans', sans-serif;
 }
 
-#statHover #popup .show {
+#popup .show {
   visibility: visible;
 }
 
