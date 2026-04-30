@@ -1,3 +1,23 @@
+/* 	From Lukas Christof Meyer, creator and caretaker of this file:
+	You will find that this file, and it's class NetworkAPI, is very much incomplete, despite the project being complete.
+	I have left the comments within it as a showing of the history and reason behind the project.
+
+	Note that, nonetheless, it was certainly complete for our project and for the user/client/customers purposes
+	Despite being UDP, being designed questionably, and not handling disconnects, there are no issues noticable.
+	After all, even if someone dropped a packet or disconnected, its not like game logic combats otherwise idle players!
+
+	I would like to also assert some contradictory modest pride. 
+	To my dismay, there was no code I could easily steal that would make this work, and had to do it myself.
+	Cut me some slack; our team used Discord to communicate, and it's WebRTC voice channel broke on us like 50 times!!!
+	In comparison to Discord, and in a more general context of what this is, I think this is fairly commendable.
+
+	This was the very first networking code I have ever written. Thus, the comments.
+	I will likely be using this as my own go-to documentation for this sort of thing for the next 5 years.
+*/
+
+
+
+
 /* TO DO:
 	Make all datachannel UDP like sendObject or setupDataChannel's async check for sequence to ensure no dropped packets.
 	More properly consider adding support of server.py as a TCP TURN server 
@@ -243,7 +263,7 @@ class NetworkAPI {
 	setupMessageHandler() {
 		this.#socket.onmessage = async(event) => {
 			const data = JSON.parse(event.data)
-
+			
 			if (data.type === "new-peer") {
 				this.createConnection(data.id, false)
 				return

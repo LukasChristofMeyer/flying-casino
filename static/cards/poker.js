@@ -1,3 +1,27 @@
+/* 	From Lukas Christof Meyer, creator and caretaker of this file, reflecting with guilt:
+
+	This needs a refactor! 
+	We have horrendous huge classes and functions, which should be abstracted, at least for my own tastes.
+	If nothing else, it is terrible this file exists, rather than more, better organized, module files.
+	But oh well. Me and my colleagues had deadlines, and we could not afford to stop much.
+	Luckily, this "dishonorable" code smell never got in the way. Well, at least it doesn't now that we're done! hahaha
+
+
+	As a travel guide to help explore:
+
+	The Pot class, line 380~, is a very intruiging showcase of the depth of needs this project had.
+	I am particularly proud of it! Yet, it is certainly a showcase of how this file is a bit weird, especially subtly.
+
+	Commit history shows this projects usage of unit testing. It is worth a decent overview of the file's struggles.
+	Although its novelty to me is certainly why I find it such a good overview,
+	The lack of unit testing for so long, and how I found it novel, is also likely why the file had such struggles! 
+
+	On lines 840~ onwards, you will find the graveyard of unused content. 
+	They all are functional in a demo-state, but did not get a proper frontend in time.
+	Most intruiging are the HTMLHandlers, lines 1200+, which originally were to be how the frontend accessed the backend
+*/
+
+
 import {Deck} from "./deck.js"
 
 
@@ -294,6 +318,9 @@ export function handScore(hand) {
 
 
 
+
+
+
 // Class to be extended for any individual poker game.
 // Thus, it mainly handles Poker values 
 export class Poker extends Deck {
@@ -345,145 +372,6 @@ export class VideoPoker extends Poker {
 
 	get hand() {return this.#hand}
 	#hand = [] // Video poker is inherently a single player game. Therefore, there is just one hand.
-}
-
-
-// Although maybe wrong to write HTML in JavaScript, I think doing it this way is benign as writing JSON is.
-// Particularly, its notable that this stuff is just what the handler's responsibilities are via game events.
-// Any worries about this being properly presentable are thus to be handled by the handlers caller.
-const videoPokerHTML = `
-<span class="currentChips" id="videoPokerCurrentChips"></span>
-<input class="betInput" id="videoPokerBetInput"></input>
-<button class="dealButton" id="videoPokerDealButton"></button>
-<ul class="hand" id="videoPokerHand"></ul>
-<div class="gameOutput" id="videoPokerOutput"></div>
-`
-
-// I believe we might have a better design for this, where the HTML Handler is inherited,
-// But for now, I just want to have some HTMLHandler for video poker.
-// Thus, I've made it this class to be somewhat more easily refactored later.
-// And please, do feel free to refactor this if you want to!
-export class VideoPokerHTMLHandler {
-	// Arbitrarily accessible class attributes for easy access to DOM elements.
-	currentChips
-	betInput
-	dealButton
-	hand
-	output
-
-	constructor(document, container) {
-		container.insertAdjacentHTML("beforeend", videoPokerHTML)
-
-		this.document = document
-		this.currentChips = document.getElementById("videoPokerCurrentChips")
-		this.betInput = document.getElementById("videoPokerBetInput")
-		this.dealButton = document.getElementById("videoPokerDealButton")
-		this.hand = document.getElementById("videoPokerHand")
-		this.output = document.getElementById("videoPokerOutput")
-		
-		this.videoPoker = new VideoPoker()
-
-		this.dealButton.disabled = true
-
-		this.betInput.addEventListener("input", () => {
-			var betValue = Number(this.betInput.value)
-
-			if (betValue > 0 && betValue <= Number(this.currentChips.textContent)) {
-				this.dealButton.disabled = false
-			} else {
-				this.dealButton.disabled = true
-				this.outputString("<p>Bet must be within your current amount of chips!</p>")			
-			}
-		})
-
-		this.dealButton.onclick = () => {
-			if (!this.betInput.disabled) {
-				this.hand.innerHTML = "" // Put here at start of game, so at end of game you can take time to admire your hand.
-				this.play()
-				this.betInput.disabled = true
-			} else {
-				this.discard()
-				this.betInput.disabled = false
-				this.endGame()
-			}
-		}
-	}
-
-
-
-	outputString(string) {
-		const newOutput = document.createElement("p")
-		newOutput.innerHTML = string
-		this.output.appendChild(newOutput)
-	}
-
-
-
-	play() {
-		this.currentChips.textContent = Number(this.currentChips.textContent) - Number(this.betInput.value)
-		if (this.currentChips.text < 0) {
-			this.currentChips.textContent = Number(this.currentChips.textContent) + Number(this.betInput.value)
-			throw RangeError(`currentChips is less than current bet!`)
-		}
-
-		this.videoPoker
-		this.videoPoker.deal()
-		
-		for (let i = 0; i < this.videoPoker.hand.length; i++) {
-			const card = this.document.createElement("li")
-			card.classList.add("card")
-			card.dataset.label = this.videoPoker.hand[i].label
-			card.dataset.suit = this.videoPoker.hand[i].suit
-			card.dataset.selected = "FALSE"
-
-			card.addEventListener("click", () => {
-				if (card.dataset.selected != "TRUE") {
-					card.dataset.selected = "TRUE"
-				} else {
-					card.dataset.selected = "FALSE"
-				}
-			})
-
-			card.dataset.index = i
-			this.hand.appendChild(card)
-		}
-	}
-
-
-
-	discard() {
-		const cards = this.hand.querySelectorAll("li")
-		cards.forEach(card => {
-			if (card.dataset.selected == "TRUE") {
-				this.videoPoker.discard(card.dataset.index)
-				card.dataset.label = this.videoPoker.hand[card.dataset.index].label
-				card.dataset.suit = this.videoPoker.hand[card.dataset.index].suit
-			}
-		})
-	}
-
-
-	
-	endGame() {
-		var pokerHand = pokerHandType(this.videoPoker.hand)
-		var winnings = Number(this.betInput.value)
-		switch(pokerHand) {
-			case "Pair": case "High Card":
-				this.outputString("You lost the hand")
-				return
-			// In video poker, different hands give different payouts! 
-			case "Two Pair": winnings = winnings*2; break;
-			case "Three of a Kind": winnings = winnings * 3; break;
-			case "Straight": case "Flush": winnings = winnings * 8; break;
-			case "Full House": winnings = winnings * 10; break;
-			case "Four of a Kind": winnings = winnings * 15; break;
-			case "Straight Flush": winnings = winnings * 20; break;
-			case "Five of a Kind": winnings = winnings * 50; break;
-		}
-
-		this.currentChips.textContent = Number(this.currentChips.textContent) + winnings
-		this.outputString(`You got a ${pokerHand}! You won ${winnings} chips!`)
-	}
 }
 
 
@@ -626,7 +514,6 @@ export class Pot {
 		this.#players = null
 	}
 }
-
 
 
 
@@ -957,251 +844,27 @@ export class TexasHoldEm extends Poker {
 }
 
 
-// Note that tableau is the community cards; I just used it as the name since it is more generic.
-const texasHoldEmHTML = `
-<label for="texasHoldEmRaiseInput">raise input:</label>
-<input class="raiseInput" id="texasHoldEmRaiseInput"></input>
-<button class="raise" id="texasHoldEmRaise"></button>
-<button class="call" id="texasHoldEmCall"></button>
-<button class="fold" id="texasHoldEmFold"></button>
-<ul class="hand" id="texasHoldemHand"></ul>
-<ul class="tableau" id="texasHoldemTableau"></ul>
-<ul class="playerStates" id="texasHoldemPlayerStates"></ul>
-<div class="gameOutput" id="texasHoldemOutput"></div>
-`
 
-
-
-export class TexasHoldEmHTMLHandler {
-	// Arbitrarily accessible class attributes for easy access to DOM elements.
-	currentBet
-	raiseInput
-	raise
-	call
-	fold
-	hand
-	tableau
-	gameOutput // Usage of gameOutput should be liberally changed into wiser bits of UI. For now though, its a nice placeholder.
-
-	playerStates
-	playerSelfIndex
-
-	sendToHost
-
-	constructor(document, container, 
-		players,
-		playerSelfIndex, // The index for the player representing the creator of this HTMLHandler.
-
-		// A NetworkAPI.sendObject function directed to the host of the game, for game actions.
-		// If you are the host, this must instead be a function that passes to the game itself: texasHoldEm.receiveAction(action)
-		sendToHost
-	) {
-		container.insertAdjacentHTML("beforeend", texasHoldEmHTML)
-
-		this.playerSelfIndex = playerSelfIndex
-		this.sendToHost = sendToHost
-
-		this.document = document
-		this.raiseInput = document.getElementById("texasHoldEmRaiseInput")
-		// need a "current pot" element here, likely.
-		this.raise = document.getElementById("texasHoldEmRaise")
-
-		// As a note on calling, it is to effectively be the same thing as checking / staying
-		// This is since you only check if no one has made a bet yet, and in such a case, you actually are just calling for 0 chips.
-		this.call = document.getElementById("texasHoldEmCall")
-		this.fold = document.getElementById("texasHoldEmFold")
-		this.hand = document.getElementById("texasHoldemHand")
-		this.tableau = document.getElementById("texasHoldemTableau")
-		this.playerStates = document.getElementById("texasHoldemPlayerStates")
-		this.gameOutput = document.getElementById("texasHoldemOutput")
-
-		for (var i = 0; i < players.length; i++) {
-			const player = this.document.createElement("li")
-			player.classList.add("player")
-			player.dataset.state = "none"
-			player.dataset.name = players[i].name
-			player.dataset.index = i
-			player.dataset.chipsRemaining = players[i].chipsRemaining
-			player.dataset.chipsBet = players[i].chipsBet
-
-			this.playerStates.appendChild(player)
-		}
-
-
-		this.call.onclick = () => {
-			this.sendToHost({
-				type: "texasHoldEm",
-				action: "call",
-				playerIndex: playerSelfIndex
-			})
-		}
-
-		this.raise.onclick = () => {
-			this.sendToHost({
-				type: "texasHoldEm",
-				action: "raise",
-				playerIndex: playerSelfIndex,
-				raise: Number(this.raiseInput.value)
-			})
-		}
-
-		this.fold.onclick = () => {
-			this.sendToHost({
-				type: "texasHoldEm",
-				action: "fold",
-				playerIndex: playerSelfIndex
-			})
-		}
-	}
-
-	outputString(string) {
-		const newOutput = document.createElement("p")
-		newOutput.innerHTML = string
-		this.output.appendChild(newOutput)
-	}
-
-	updatePlayerState(playerIndex, state) {
-		const playerStates = this.playerStates.querySelectorAll(`[data-index="${playerIndex}"`)
-		playerStates.forEach(playerState => {
-			playerState.dataset.state = state // as in folded, called, or raised
-		})
-	}
-
-	updatePlayerBalance(playerIndex, chipsBet, chipsRemaining) {
-		const playerStates = this.playerStates.querySelectorAll(`[data-index="${playerIndex}"`)
-		playerStates.forEach(playerState => {
-			playerState.dataset.chipsBet = chipsBet
-			playerState.dataset.chipsRemaining = chipsRemaining
-		})
-	}
-
-
-	renderHand(hand) {
-		this.hand.innerHTML = ""
-		for (let i = 0; i < hand.length; i++) {
-			const card = this.document.createElement("li")
-			card.classList.add("card")
-			card.dataset.label = hand[i].label
-			card.dataset.suit = hand[i].suit
-			card.dataset.index = i
-
-			this.hand.appendChild(card)
-		}
-	}
-
-	// Essentially, we want the NetworkAPI to give any texasHoldEm actions to the HTMLHandler, so we can handle them.
-	// We expect that NetworkAPI to send a JavaScript object converted from a sent JSON message.
-
-	// A lot of these are frankly really stupid, and should be consolidated.
-	// For one, most actions dedicated to rendering are pretty much just be some variation of the "gameState" action 
-	receiveAction(actionObject) {
-		switch(actionObject.action) {
-			case "giveHand":
-				this.renderHand(actionObject.hand)
-				break
-
-			case "nextTurn": 
-				if (actionObject.toPlay == this.playerSelfIndex) {
-					const p = this.document.createElement("p")
-					p.innerText = "It is your turn to play!"
-					this.gameOutput.appendChild(p)
-				} else {
-					const p = this.document.createElement("p")
-					p.innerText = "It is player " + actionObject.toPlay + "'s turn."
-					this.gameOutput.appendChild(p)
-				}
-				break
-
-			case "flop":
-				for (let i = 0; i < actionObject.flopped.length; i++) {
-					const card = this.document.createElement("li")
-					card.classList.add("card")
-					card.dataset.label = actionObject.flopped[i].label
-					card.dataset.suit = actionObject.flopped[i].suit
-					card.dataset.index = i
-
-					this.tableau.appendChild(card)
-				}
-				break
-
-			case "turn": {
-				const card = this.document.createElement("li")
-				card.classList.add("card")
-				card.dataset.label = actionObject.card.label
-				card.dataset.suit = actionObject.card.suit
-				card.dataset.index = 3
-				this.tableau.appendChild(card) 
-			} break
-
-			case "river": {
-				const card = this.document.createElement("li")
-				card.classList.add("card")
-				card.dataset.label = actionObject.card.label
-				card.dataset.suit = actionObject.card.suit
-				card.dataset.index = 4
-				this.tableau.appendChild(card)
-			} break
-
-			case "revealedWinners": {
-				actionObject.winners.forEach(winner => {
-					const p = this.document.createElement("p")
-					p.innerText = p.innerText + winner.name + " won!\n"
-					this.gameOutput.appendChild(p)
-				})
-			} break
-
-			case "showHand": {
-				const p = this.document.createElement("p")
-				p.innerText = actionObject.player.name + " had " + actionObject.player.hand[0].label + " " + actionObject.player.hand[0].suit
-				+ " and " + actionObject.player.hand[1].label + " " + actionObject.player.hand[1].suit + ". A " + actionObject.handType
-
-				this.gameOutput.appendChild(p)
-				this.updatePlayerBalance(actionObject.ownerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
-			} break
-
-			case "playerRaised": {
-				const p = this.document.createElement("p")
-				p.innerText = "Player " + actionObject.playerIndex + " raised " + actionObject.raiseAmount
-				this.gameOutput.appendChild(p)
-				
-				this.updatePlayerState(actionObject.playerIndex, "raised")
-				this.updatePlayerBalance(actionObject.playerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
-			} break
-
-			case "playerCalled": {
-				const p = this.document.createElement("p")
-				p.innerText = "Player " + actionObject.playerIndex + " called."
-				this.gameOutput.appendChild(p)
-				
-				this.updatePlayerState(actionObject.playerIndex, "called")
-				this.updatePlayerBalance(actionObject.playerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
-			} break
-
-			case "playerFolded": {
-				const p = this.document.createElement("p")
-				p.innerText = "Player " + actionObject.playerIndex + " called."
-				this.gameOutput.appendChild(p)
-				
-				this.updatePlayerState(actionObject.playerIndex, "folded")
-			} break
-
-			case "gameState": {
-				for (let i = 0; i < actionObject.players.length; i++) {
-					this.updatePlayerState(i, actionObject.players[i].state)
-					this.updatePlayerBalance(i, actionObject.players[i].chipsBet, actionObject.players[i].chipsRemaining)
-				}
-			} break
-
-			// Kind of stupid, but I like the logic.
-			// The host has sendToHost() send this to the host stuff, whilst others have sendToHost() send it to the host.
-			case "raise":
-			case "call":
-			case "fold":
-				this.sendToHost(actionObject)
-				break
-		}
+export class Player {
+	chipsRemaining = 0
+	chipsBet = 0
+	state = "none"
+	name = "anonymous"
+	
+	constructor(sendFunction) {
+		this.send = sendFunction
 	}
 }
+
+
+
+
+
+// Below are the un-implemented games. 
+// They do, at least theoretically, function to all we require, however. 
+// Rather, they are un-implemented as the front-end development for them was sadly simply too time intensive.
+
+
 
 
 
@@ -1215,19 +878,6 @@ export class RoyalHoldEm extends TexasHoldEm {
 
 	reset() {
 		this.cards = [this.AS, this.TenS, this.JS, this.QS, this.KS, this.AH, this.TenH, this.JH, this.QH, this.KH, this.AC, this.TenC, this.JC, this.QC, this.KC, this.AD, this.TenD, this.JD, this.QD, this.KD];
-	}
-}
- 
-
-
-export class Player {
-	chipsRemaining = 0
-	chipsBet = 0
-	state = "none"
-	name = "anonymous"
-	
-	constructor(sendFunction) {
-		this.send = sendFunction
 	}
 }
 
@@ -1550,6 +1200,405 @@ export class FiveCardDraw extends Poker {
 		}
 	}
 }
+
+
+
+
+
+// The below HTML Handlers were originally intended for use in the project as how webpages used game objects.
+// However, they turned out to just be used for demos, and as general guidelines for what webpages needed to do.
+
+
+
+
+
+// Although maybe wrong to write HTML in JavaScript, I think doing it this way is benign as writing JSON is.
+// Particularly, its notable that this stuff is just what the handler's responsibilities are via game events.
+// Any worries about this being properly presentable are thus to be handled by the handlers caller.
+const videoPokerHTML = `
+<span class="currentChips" id="videoPokerCurrentChips"></span>
+<input class="betInput" id="videoPokerBetInput"></input>
+<button class="dealButton" id="videoPokerDealButton"></button>
+<ul class="hand" id="videoPokerHand"></ul>
+<div class="gameOutput" id="videoPokerOutput"></div>
+`
+
+// I believe we might have a better design for this, where the HTML Handler is inherited,
+// But for now, I just want to have some HTMLHandler for video poker.
+// Thus, I've made it this class to be somewhat more easily refactored later.
+// And please, do feel free to refactor this if you want to!
+export class VideoPokerHTMLHandler {
+	// Arbitrarily accessible class attributes for easy access to DOM elements.
+	currentChips
+	betInput
+	dealButton
+	hand
+	output
+
+	constructor(document, container) {
+		container.insertAdjacentHTML("beforeend", videoPokerHTML)
+
+		this.document = document
+		this.currentChips = document.getElementById("videoPokerCurrentChips")
+		this.betInput = document.getElementById("videoPokerBetInput")
+		this.dealButton = document.getElementById("videoPokerDealButton")
+		this.hand = document.getElementById("videoPokerHand")
+		this.output = document.getElementById("videoPokerOutput")
+		
+		this.videoPoker = new VideoPoker()
+
+		this.dealButton.disabled = true
+
+		this.betInput.addEventListener("input", () => {
+			var betValue = Number(this.betInput.value)
+
+			if (betValue > 0 && betValue <= Number(this.currentChips.textContent)) {
+				this.dealButton.disabled = false
+			} else {
+				this.dealButton.disabled = true
+				this.outputString("<p>Bet must be within your current amount of chips!</p>")			
+			}
+		})
+
+		this.dealButton.onclick = () => {
+			if (!this.betInput.disabled) {
+				this.hand.innerHTML = "" // Put here at start of game, so at end of game you can take time to admire your hand.
+				this.play()
+				this.betInput.disabled = true
+			} else {
+				this.discard()
+				this.betInput.disabled = false
+				this.endGame()
+			}
+		}
+	}
+
+
+
+	outputString(string) {
+		const newOutput = document.createElement("p")
+		newOutput.innerHTML = string
+		this.output.appendChild(newOutput)
+	}
+
+
+
+	play() {
+		this.currentChips.textContent = Number(this.currentChips.textContent) - Number(this.betInput.value)
+		if (this.currentChips.text < 0) {
+			this.currentChips.textContent = Number(this.currentChips.textContent) + Number(this.betInput.value)
+			throw RangeError(`currentChips is less than current bet!`)
+		}
+
+		this.videoPoker
+		this.videoPoker.deal()
+		
+		for (let i = 0; i < this.videoPoker.hand.length; i++) {
+			const card = this.document.createElement("li")
+			card.classList.add("card")
+			card.dataset.label = this.videoPoker.hand[i].label
+			card.dataset.suit = this.videoPoker.hand[i].suit
+			card.dataset.selected = "FALSE"
+
+			card.addEventListener("click", () => {
+				if (card.dataset.selected != "TRUE") {
+					card.dataset.selected = "TRUE"
+				} else {
+					card.dataset.selected = "FALSE"
+				}
+			})
+
+			card.dataset.index = i
+			this.hand.appendChild(card)
+		}
+	}
+
+
+
+	discard() {
+		const cards = this.hand.querySelectorAll("li")
+		cards.forEach(card => {
+			if (card.dataset.selected == "TRUE") {
+				this.videoPoker.discard(card.dataset.index)
+				card.dataset.label = this.videoPoker.hand[card.dataset.index].label
+				card.dataset.suit = this.videoPoker.hand[card.dataset.index].suit
+			}
+		})
+	}
+
+
+	
+	endGame() {
+		var pokerHand = pokerHandType(this.videoPoker.hand)
+		var winnings = Number(this.betInput.value)
+		switch(pokerHand) {
+			case "Pair": case "High Card":
+				this.outputString("You lost the hand")
+				return
+			// In video poker, different hands give different payouts! 
+			case "Two Pair": winnings = winnings*2; break;
+			case "Three of a Kind": winnings = winnings * 3; break;
+			case "Straight": case "Flush": winnings = winnings * 8; break;
+			case "Full House": winnings = winnings * 10; break;
+			case "Four of a Kind": winnings = winnings * 15; break;
+			case "Straight Flush": winnings = winnings * 20; break;
+			case "Five of a Kind": winnings = winnings * 50; break;
+		}
+
+		this.currentChips.textContent = Number(this.currentChips.textContent) + winnings
+		this.outputString(`You got a ${pokerHand}! You won ${winnings} chips!`)
+	}
+}
+
+
+
+// Note that tableau is the community cards; I just used it as the name since it is more generic.
+const texasHoldEmHTML = `
+<label for="texasHoldEmRaiseInput">raise input:</label>
+<input class="raiseInput" id="texasHoldEmRaiseInput"></input>
+<button class="raise" id="texasHoldEmRaise"></button>
+<button class="call" id="texasHoldEmCall"></button>
+<button class="fold" id="texasHoldEmFold"></button>
+<ul class="hand" id="texasHoldemHand"></ul>
+<ul class="tableau" id="texasHoldemTableau"></ul>
+<ul class="playerStates" id="texasHoldemPlayerStates"></ul>
+<div class="gameOutput" id="texasHoldemOutput"></div>
+`
+
+
+
+export class TexasHoldEmHTMLHandler {
+	// Arbitrarily accessible class attributes for easy access to DOM elements.
+	currentBet
+	raiseInput
+	raise
+	call
+	fold
+	hand
+	tableau
+	gameOutput // Usage of gameOutput should be liberally changed into wiser bits of UI. For now though, its a nice placeholder.
+
+	playerStates
+	playerSelfIndex
+
+	sendToHost
+
+	constructor(document, container, 
+		players,
+		playerSelfIndex, // The index for the player representing the creator of this HTMLHandler.
+
+		// A NetworkAPI.sendObject function directed to the host of the game, for game actions.
+		// If you are the host, this must instead be a function that passes to the game itself: texasHoldEm.receiveAction(action)
+		sendToHost
+	) {
+		container.insertAdjacentHTML("beforeend", texasHoldEmHTML)
+
+		this.playerSelfIndex = playerSelfIndex
+		this.sendToHost = sendToHost
+
+		this.document = document
+		this.raiseInput = document.getElementById("texasHoldEmRaiseInput")
+		// need a "current pot" element here, likely.
+		this.raise = document.getElementById("texasHoldEmRaise")
+
+		// As a note on calling, it is to effectively be the same thing as checking / staying
+		// This is since you only check if no one has made a bet yet, and in such a case, you actually are just calling for 0 chips.
+		this.call = document.getElementById("texasHoldEmCall")
+		this.fold = document.getElementById("texasHoldEmFold")
+		this.hand = document.getElementById("texasHoldemHand")
+		this.tableau = document.getElementById("texasHoldemTableau")
+		this.playerStates = document.getElementById("texasHoldemPlayerStates")
+		this.gameOutput = document.getElementById("texasHoldemOutput")
+
+		for (var i = 0; i < players.length; i++) {
+			const player = this.document.createElement("li")
+			player.classList.add("player")
+			player.dataset.state = "none"
+			player.dataset.name = players[i].name
+			player.dataset.index = i
+			player.dataset.chipsRemaining = players[i].chipsRemaining
+			player.dataset.chipsBet = players[i].chipsBet
+
+			this.playerStates.appendChild(player)
+		}
+
+
+		this.call.onclick = () => {
+			this.sendToHost({
+				type: "texasHoldEm",
+				action: "call",
+				playerIndex: playerSelfIndex
+			})
+		}
+
+		this.raise.onclick = () => {
+			this.sendToHost({
+				type: "texasHoldEm",
+				action: "raise",
+				playerIndex: playerSelfIndex,
+				raise: Number(this.raiseInput.value)
+			})
+		}
+
+		this.fold.onclick = () => {
+			this.sendToHost({
+				type: "texasHoldEm",
+				action: "fold",
+				playerIndex: playerSelfIndex
+			})
+		}
+	}
+
+	outputString(string) {
+		const newOutput = document.createElement("p")
+		newOutput.innerHTML = string
+		this.output.appendChild(newOutput)
+	}
+
+	updatePlayerState(playerIndex, state) {
+		const playerStates = this.playerStates.querySelectorAll(`[data-index="${playerIndex}"`)
+		playerStates.forEach(playerState => {
+			playerState.dataset.state = state // as in folded, called, or raised
+		})
+	}
+
+	updatePlayerBalance(playerIndex, chipsBet, chipsRemaining) {
+		const playerStates = this.playerStates.querySelectorAll(`[data-index="${playerIndex}"`)
+		playerStates.forEach(playerState => {
+			playerState.dataset.chipsBet = chipsBet
+			playerState.dataset.chipsRemaining = chipsRemaining
+		})
+	}
+
+
+	renderHand(hand) {
+		this.hand.innerHTML = ""
+		for (let i = 0; i < hand.length; i++) {
+			const card = this.document.createElement("li")
+			card.classList.add("card")
+			card.dataset.label = hand[i].label
+			card.dataset.suit = hand[i].suit
+			card.dataset.index = i
+
+			this.hand.appendChild(card)
+		}
+	}
+
+	// Essentially, we want the NetworkAPI to give any texasHoldEm actions to the HTMLHandler, so we can handle them.
+	// We expect that NetworkAPI to send a JavaScript object converted from a sent JSON message.
+
+	// A lot of these are frankly really stupid, and should be consolidated.
+	// For one, most actions dedicated to rendering are pretty much just be some variation of the "gameState" action 
+	receiveAction(actionObject) {
+		switch(actionObject.action) {
+			case "giveHand":
+				this.renderHand(actionObject.hand)
+				break
+
+			case "nextTurn": 
+				if (actionObject.toPlay == this.playerSelfIndex) {
+					const p = this.document.createElement("p")
+					p.innerText = "It is your turn to play!"
+					this.gameOutput.appendChild(p)
+				} else {
+					const p = this.document.createElement("p")
+					p.innerText = "It is player " + actionObject.toPlay + "'s turn."
+					this.gameOutput.appendChild(p)
+				}
+				break
+
+			case "flop":
+				for (let i = 0; i < actionObject.flopped.length; i++) {
+					const card = this.document.createElement("li")
+					card.classList.add("card")
+					card.dataset.label = actionObject.flopped[i].label
+					card.dataset.suit = actionObject.flopped[i].suit
+					card.dataset.index = i
+
+					this.tableau.appendChild(card)
+				}
+				break
+
+			case "turn": {
+				const card = this.document.createElement("li")
+				card.classList.add("card")
+				card.dataset.label = actionObject.card.label
+				card.dataset.suit = actionObject.card.suit
+				card.dataset.index = 3
+				this.tableau.appendChild(card) 
+			} break
+
+			case "river": {
+				const card = this.document.createElement("li")
+				card.classList.add("card")
+				card.dataset.label = actionObject.card.label
+				card.dataset.suit = actionObject.card.suit
+				card.dataset.index = 4
+				this.tableau.appendChild(card)
+			} break
+
+			case "revealedWinners": {
+				actionObject.winners.forEach(winner => {
+					const p = this.document.createElement("p")
+					p.innerText = p.innerText + winner.name + " won!\n"
+					this.gameOutput.appendChild(p)
+				})
+			} break
+
+			case "showHand": {
+				const p = this.document.createElement("p")
+				p.innerText = actionObject.player.name + " had " + actionObject.player.hand[0].label + " " + actionObject.player.hand[0].suit
+				+ " and " + actionObject.player.hand[1].label + " " + actionObject.player.hand[1].suit + ". A " + actionObject.handType
+
+				this.gameOutput.appendChild(p)
+				this.updatePlayerBalance(actionObject.ownerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerRaised": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " raised " + actionObject.raiseAmount
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "raised")
+				this.updatePlayerBalance(actionObject.playerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerCalled": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " called."
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "called")
+				this.updatePlayerBalance(actionObject.playerIndex, actionObject.player.chipsBet, actionObject.player.chipsRemaining)
+			} break
+
+			case "playerFolded": {
+				const p = this.document.createElement("p")
+				p.innerText = "Player " + actionObject.playerIndex + " called."
+				this.gameOutput.appendChild(p)
+				
+				this.updatePlayerState(actionObject.playerIndex, "folded")
+			} break
+
+			case "gameState": {
+				for (let i = 0; i < actionObject.players.length; i++) {
+					this.updatePlayerState(i, actionObject.players[i].state)
+					this.updatePlayerBalance(i, actionObject.players[i].chipsBet, actionObject.players[i].chipsRemaining)
+				}
+			} break
+
+			// Kind of stupid, but I like the logic.
+			// The host has sendToHost() send this to the host stuff, whilst others have sendToHost() send it to the host.
+			case "raise":
+			case "call":
+			case "fold":
+				this.sendToHost(actionObject)
+				break
+		}
+	}
+}
+
+
 
 
 // This is the same as videoPokerHTML, but with betting added

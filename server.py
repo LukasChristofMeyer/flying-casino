@@ -1,3 +1,16 @@
+"""	From Lukas Christof Meyer, creator and caretaker of this file:
+	This was the original version of the signaling server for WebRTC peer to peer connections.
+	It is no longer the version used. Use signal_server.js instead.
+
+	It remains useful for trying out our demos however, those being:
+	static/network/network.html
+	static/cards/texasHoldEm-demo.html
+	static/fiveCardDraw-demo.html
+	As these demos rely on this files simplistic room logic.
+	To interact with those demos, you will have to run this file and reconfigure the demos to use it.
+"""
+
+
 import asyncio
 import websockets
 import json
