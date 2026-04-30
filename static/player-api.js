@@ -4,10 +4,10 @@ export class LocalPlayerData {
 	#name
 	#chips
 	#wins
-	constructor(name) {
+	constructor(name, chips, wins) {
 		this.#name = name;
-		this.#chips = 0;
-		this.#wins = 0;
+		this.#chips = chips;
+		this.#wins = wins;
 	}
 
 	getName() {
@@ -20,6 +20,7 @@ export class LocalPlayerData {
 
 	giveChips(x) {
 		this.#chips += x;
+		window.localStorage.setItem('fcp_chips', this.#chips);
 	}
 
 	getWins() {
@@ -28,6 +29,7 @@ export class LocalPlayerData {
 
 	giveWins() {
 		this.#wins += 1;
+		window.localStorage.setItem('fcp_wins', this.#wins);
 	}
 }
 
@@ -40,11 +42,16 @@ export class LocalPlayerData {
  */
 export function initializePlayerData(name = 'unnamed') {
 	window.localStorage.setItem('fcp_name', name);
+	// Don't update chips/wins, those should be persistent
 }
 
 /** Retrieves player data stored in local storage from the main menu.
  * @returns {LocalPlayerData}
  */
 export function retrievePlayerData() {
-	return new LocalPlayerData(window.localStorage.getItem('fcp_name') || 'unnamed');
+	return new LocalPlayerData(
+		window.localStorage.getItem('fcp_name') || 'unnamed',
+		+window.localStorage.getItem('fcp_chips') || 0,
+		+window.localStorage.getItem('fcp_wins') || 0
+	);
 }
