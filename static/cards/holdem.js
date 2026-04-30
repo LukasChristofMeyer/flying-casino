@@ -81,6 +81,7 @@ let toPlayIndex = -1
 let blindIndex	= 0
 let gamePlayers = []	// host-side Player objects
 let nextRoundTimer = null
+let cumulativePot  = 0
 
 // ── DOM ────────────────────────────────────────────────────────────────────
 const viewLobby		= document.getElementById('view-lobby')
@@ -169,7 +170,7 @@ function renderCommunityCards() {
 
 function updatePot() {
 	document.getElementById('pot-amount').textContent =
-		players.reduce((s,p) => s+(p.chipsBet||0), 0)
+		cumulativePot + players.reduce((s,p) => s+(p.chipsBet||0), 0)
 }
 
 function updateMySeat() {
@@ -278,6 +279,21 @@ function pdata(p) {
 // ── Game message handler ───────────────────────────────────────────────────
 function receiveGameMessage(msg) {
 	switch (msg.action) {
+
+		case 'newRound':
+			commCards = []; myHand = []; toPlayIndex = -1
+			document.getElementById('my-cards').innerHTML        = ''
+			document.getElementById('my-hand-type').textContent = ''
+			document.getElementById('my-hand-type').className   = 'my-hand-type'
+			if (msg.players) { for (let i=0;i<msg.players.length;i++) players[i]={...players[i],...msg.players[i]} }
+			if (msg.cumulativePot != null) cumulativePot = msg.cumulativePot
+			btnOtherGame.classList.add('hidden')
+			renderCommunityCards()
+			setActionRow(false)
+			buildOpponentSeats(); updateAllSeats()
+			updatePot()
+			log('— New Round —', 'log-round')
+			break
 
 		case 'giveHand':
 			myHand = msg.hand.map(c=>({label:c.label,suit:c.suit}))
@@ -419,6 +435,7 @@ function initGameView() {
 function startNewRound() {
 	clearTimeout(nextRoundTimer)
 	btnOtherGame.classList.add('hidden')
+	cumulativePot += players.reduce((s,p) => s+(p.chipsBet||0), 0)
 	commCards = []; myHand = []; toPlayIndex = -1
 	document.getElementById('my-cards').innerHTML			 = ''
 	document.getElementById('my-hand-type').textContent = ''
@@ -428,6 +445,8 @@ function startNewRound() {
 	for (const p of gamePlayers) { p.chipsBet=0; p.state='none'; p.hand=null }
 	players = gamePlayers.map(p => pdata(p))
 	buildOpponentSeats(); updateAllSeats()
+	updatePot()
+	if (!isSolo && network) network.broadcastObject({ type: 'texasHoldEm', action: 'newRound', players: players.map(p=>({name:p.name,chipsRemaining:p.chipsRemaining,chipsBet:0,state:'none'})), cumulativePot })
 	game = new TexasHoldEm(gamePlayers, STARTING_BET)
 	sendToHost = obj => game.receiveAction(obj)
 	// Re-attach AI action function after new game instance is created
@@ -548,6 +567,7 @@ btnRaise.onclick = () => {
 btnPlayAgain.onclick = () => {
 	btnPlayAgain.classList.add('hidden')
 	btnOtherGame.classList.add('hidden')
+	cumulativePot = 0
 	gamePlayers.forEach(p => { p.chipsRemaining = STARTING_CHIPS; p.chipsBet = 0; p.state = 'none'; p.hand = null })
 	players = gamePlayers.map(p => pdata(p))
 	blindIndex = 0
