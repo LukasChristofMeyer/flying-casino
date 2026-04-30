@@ -11,6 +11,3 @@ function showStats () {
 }
 
 statHover.addEventListener("mouseover", showStats());
-statHover.addEventListener("mouseout", () =>{
-    popup.style.visibility = 'hidden';
-} )
