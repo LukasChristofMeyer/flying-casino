@@ -199,7 +199,7 @@ function handler(socket, _request) {
 				const room = roomDict.get(packet.room);
 				if (room) {room.add(socketUuid, socket)} 
 				else {
-					await socket.send(json.dumps({"type": "denied"}))
+					socket.send(JSON.stringify({"type": "denied"}))
 					socket.terminate() // You're trying to crash everyone, so scram!!!
 					return
 				}
