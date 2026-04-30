@@ -1,11 +1,11 @@
 .statHover {
-  color: white;
+  color: lightgrey;
   font-size: 12px;
   bottom: 50px;
   text-align: right;
   left: 50px;
   position: absolute;
-  
+  font-family: 'Open Sans', sans-serif;
 }
 
 .popup {
@@ -15,9 +15,13 @@
   bottom: 65px;
   height: 200px;
   width: 75px;
+  color: black;
   background-color: beige;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .popup .show {
   visibility: visible;
 }
+
+.open-sans-custom-font       { font-family: 'Open Sans', sans-serif; font-weight: 400; }
