@@ -93,7 +93,6 @@ const btnFold			= document.getElementById('btn-fold')
 const btnCall			= document.getElementById('btn-call')
 const btnRaise		 = document.getElementById('btn-raise')
 const raiseInput	 = document.getElementById('raise-input')
-const btnNext			= document.getElementById('btn-next-round')
 const btnPlayAgain = document.getElementById('btn-play-again')
 const oppRow			 = document.getElementById('opponents-row')
 const commCardsEl	= document.getElementById('community-cards')
@@ -380,7 +379,7 @@ function receiveGameMessage(msg) {
 					log(iWon ? '🎉 You win the game!' : 'Game over — you ran out of chips.', 'log-win')
 					btnPlayAgain.classList.remove('hidden')
 				} else {
-					btnNext.classList.remove('hidden')
+					startNewRound()
 				}
 			}
 			break
@@ -410,7 +409,7 @@ function initGameView() {
 	document.getElementById('my-name').textContent	= myName
 	document.getElementById('my-chips').textContent = players[myPlayerIndex]?.chipsRemaining ?? STARTING_CHIPS
 	buildOpponentSeats()
-	if (isHost && !isSolo) { log('You are the host — click Next Round to deal.'); btnNext.classList.remove('hidden') }
+	if (isHost && !isSolo) { startNewRound() }
 }
 
 function startNewRound() {
@@ -420,7 +419,6 @@ function startNewRound() {
 	document.getElementById('my-hand-type').className	 = 'my-hand-type'
 	renderCommunityCards()
 	setActionRow(false)
-	btnNext.classList.add('hidden')
 	for (const p of gamePlayers) { p.chipsBet=0; p.state='none'; p.hand=null }
 	players = gamePlayers.map(p => pdata(p))
 	buildOpponentSeats(); updateAllSeats()
@@ -541,7 +539,6 @@ btnRaise.onclick = () => {
 	const amt = Number(raiseInput.value); if (amt<=0) return
 	sendToHost?.({type:'texasHoldEm', action:'raise', playerIndex:myPlayerIndex, raise:amt})
 }
-btnNext.onclick	= () => { if (isHost) startNewRound() }
 btnPlayAgain.onclick = () => {
 	btnPlayAgain.classList.add('hidden')
 	gamePlayers.forEach(p => { p.chipsRemaining = STARTING_CHIPS; p.chipsBet = 0; p.state = 'none'; p.hand = null })
