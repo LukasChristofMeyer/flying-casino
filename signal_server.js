@@ -133,7 +133,7 @@ class Room {
 		--this.connectedPeers;
 		
 		// If there is nobody in the room anymore, we'll remove the room from being accessible in three minutes.
-		if (this.connectedPeers <= 0) {this.beginTimeout} 
+		if (this.connectedPeers <= 0) {this.beginTimeout()} 
 	}
 
 	broadcast() {
