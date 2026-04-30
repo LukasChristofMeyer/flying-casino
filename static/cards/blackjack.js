@@ -1,5 +1,5 @@
 import { Deck } from "./deck.js"
-import { retrievePlayerData, LocalPlayerData } from "../player-api.js"
+import { retrievePlayerData } from "../player-api.js"
 import { constructNetworkAPI } from "../network/network.js"
 import { signalServerAddress } from "../flying-casino.js"
 
