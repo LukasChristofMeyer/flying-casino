@@ -1,7 +1,7 @@
 import { LocalPlayerData } from "./player-api.js";
 
 const statHover = document.getElementById("statHover");
-const popup = document.getElementbyId("popup");
+const popup = document.getElementById("popup");
 console.log(statHover);
 
 function showStats () {
