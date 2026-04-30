@@ -42,16 +42,15 @@ class Room {
 	#socketDict
 	timeout = null
 	
-	removeRoom() {roomDict.delete(this.id)}
 	beginTimeout() {
 		clearTimeout(this.timeout); // If there was another timeout, remove it. This is needed for cancellation.
-		this.timeout = setTimeout(() => this.removeRoom(), 180000); // Anyway, possibly resetting it for another three minutes is harmless
+		this.timeout = setTimeout(() => roomDict.delete(this.id), 180000); // Anyway, possibly resetting it for another three minutes is harmless
 	}
 	cancelTimeout() {
 		clearTimeout(this.timeout);
 		// Despite the name, if you're here for 24 hours and do not do anything to cancelTimeOut, you should leave likely for your own sake
 		// This long period is reasonable; the only interaction rooms have is the start of P2P interactions, so you could play a while
-		this.timeout = setTimeout(() => this.removeRoom(), 86400000)
+		this.timeout = setTimeout(() => roomDict.delete(this.id), 86400000)
 
 		// Notably, this also readds the room to the dict, in case it already did time out and was removed.
 		if (!roomDict.has(this.id)) {
@@ -134,7 +133,7 @@ class Room {
 		--this.connectedPeers;
 		
 		// If there is nobody in the room anymore, we'll remove the room from being accessible in three minutes.
-		if (this.connectedPeers <= 0) {this.beginTimeout} 
+		if (this.connectedPeers <= 0) {this.beginTimeout()} 
 	}
 
 	broadcast() {
