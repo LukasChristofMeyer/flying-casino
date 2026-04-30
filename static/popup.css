@@ -1,4 +1,4 @@
-.statHover {
+#statHover {
   color: lightgrey;
   font-size: 12px;
   bottom: 50px;
@@ -8,7 +8,7 @@
   font-family: 'Open Sans', sans-serif;
 }
 
-.statHover .popup {
+#statHover #popup {
   visibility: hidden;
   position: absolute;
   left: 50px;
@@ -20,7 +20,7 @@
   font-family: 'Open Sans', sans-serif;
 }
 
-.statHover .popup .show {
+#statHover #popup .show {
   visibility: visible;
 }
 
