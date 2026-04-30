@@ -1,7 +1,7 @@
 import { TexasHoldEm, Player, pokerHandType, pokerHandValueTable } from "./poker.js"
 import { constructNetworkAPI } from "../network/network.js"
 import { retrievePlayerData } from "../player-api.js"
-import { signalServerAddress } from "../flying-casino.js"
+import { signalServerAddress, apiAddress } from "../flying-casino.js"
 
 const STARTING_CHIPS = 1000
 const STARTING_BET	 = 10
@@ -551,6 +551,9 @@ if (!isSolo) {
 		const pd		= gamePlayers.map(p => pdata(p))
 		for (let i=1;i<gamePlayers.length;i++)
 			gamePlayers[i].send({type:'holdEmInit', players:pd, playerIndex:i})
+		const request = new XMLHttpRequest()
+		request.open('POST', apiAddress + '/room-started')
+		request.send(new Blob([JSON.stringify({ id: roomId })], { type: 'text/plain' }))
 		game			= new TexasHoldEm(gamePlayers, STARTING_BET)
 		sendToHost = obj => game.receiveAction(obj)
 		initGameView()

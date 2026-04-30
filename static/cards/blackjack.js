@@ -1,7 +1,7 @@
 import { Deck } from "./deck.js"
 import { retrievePlayerData } from "../player-api.js"
 import { constructNetworkAPI } from "../network/network.js"
-import { signalServerAddress } from "../flying-casino.js"
+import { signalServerAddress, apiAddress } from "../flying-casino.js"
 
 const MAX_PLAYERS = 4
 const params = new URLSearchParams(window.location.search)
@@ -474,6 +474,9 @@ if (!isSolo) {
 		for (let i = 1; i < gamePlayers.length; i++) {
 			gamePlayers[i].send({ type: 'blackjackInit', playerIndex: i, players })
 		}
+		const request = new XMLHttpRequest()
+		request.open('POST', apiAddress + '/room-started')
+		request.send(new Blob([JSON.stringify({ id: roomId })], { type: 'text/plain' }))
 		initGameView()
 		hostStartRound()
 	}
