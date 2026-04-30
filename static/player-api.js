@@ -51,7 +51,7 @@ export function initializePlayerData(name = 'unnamed') {
 export function retrievePlayerData() {
 	return new LocalPlayerData(
 		window.localStorage.getItem('fcp_name') || 'unnamed',
-		window.localStorage.getItem('fcp_chips') || 0,
-		window.localStorage.getItem('fcp_wins') || 0
+		+window.localStorage.getItem('fcp_chips') || 0,
+		+window.localStorage.getItem('fcp_wins') || 0
 	);
 }
