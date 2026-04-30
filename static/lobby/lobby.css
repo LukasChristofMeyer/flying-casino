@@ -296,6 +296,15 @@
 	letter-spacing: 0.3px;
 }
 
+.room-card-count {
+	font-size: 12px;
+	color: rgba(201,168,76,0.6);
+	letter-spacing: 1px;
+	white-space: nowrap;
+	margin-right: auto;
+	padding-left: 14px;
+}
+
 .btn-join {
 	flex-shrink: 0;
 	padding: 6px 17px;

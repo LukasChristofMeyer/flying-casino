@@ -1,5 +1,5 @@
 import { retrievePlayerData } from "../player-api.js"
-import { apiAddress, debugLog } from "../flying-casino.js";
+import { apiAddress, signalServerAddress, debugLog } from "../flying-casino.js";
 
 const player = retrievePlayerData();
 
@@ -82,6 +82,16 @@ function showRooms() {
 /** Displays a list of available multiplayer tables.
  * @param {Array<{ name: string, creator: string, id: string, game: string }>} rooms (optional) list of rooms
  */
+async function getPeerCounts() {
+	try {
+		const httpBase = signalServerAddress.replace(/^wss?:\/\//, 'https://').replace(/\/$/, '');
+		const res = await fetch(`${httpBase}/peer-count`);
+		return await res.json();
+	} catch {
+		return {};
+	}
+}
+
 async function renderRooms(rooms) {
 	const all     = (rooms || await getRooms()).filter(r => r.game === currentGame);
 	const list    = document.getElementById('lobby-list');
@@ -92,8 +102,11 @@ async function renderRooms(rooms) {
 	empty.style.display = all.length === 0 ? 'block' : 'none';
 	list.innerHTML = '';
 
+	const counts = await getPeerCounts();
+
 	for (const room of all) {
-		const url  = `${GAME_PAGES[room.game]}?room=${encodeURIComponent(room.id)}`;
+		const url        = `${GAME_PAGES[room.game]}?room=${encodeURIComponent(room.id)}`;
+		const playerCount = counts[room.id] ?? 0;
 		const card = document.createElement('div');
 		card.className = 'room-card';
 		card.innerHTML = `
@@ -101,6 +114,7 @@ async function renderRooms(rooms) {
 				<div class="room-card-name">${escapeHtml(room.name)}</div>
 				<div class="room-card-meta">by ${escapeHtml(room.creator)}</div>
 			</div>
+			<span class="room-card-count">${playerCount} ${playerCount === 1 ? 'player' : 'players'}</span>
 			<a class="btn-join" href="${escapeHtml(url)}">Join</a>
 		`;
 		list.appendChild(card);
@@ -135,9 +149,13 @@ document.getElementById('create-btn').addEventListener('click', () => {
 	createRoom();
 });
 
-// ── Game card clicks → go to mode select ──
+// ── Game card clicks → go to mode select (or directly to game for solo-only games) ──
 document.querySelectorAll('.game-card:not(.coming-soon)').forEach(card => {
-	card.addEventListener('click', () => showMode(card.dataset.game));
+	card.addEventListener('click', () => {
+		const game = card.dataset.game;
+		if (game === 'video-poker') { location.href = GAME_PAGES['video-poker']; return; }
+		showMode(game);
+	});
 });
 
 // ── Mode select buttons ──

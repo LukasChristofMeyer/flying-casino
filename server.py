@@ -3,6 +3,7 @@ import websockets
 import json
 import uuid
 import os
+from http import HTTPStatus
 
 """
 	Dictionary of rooms, which shall have a dictionary of ids to websockets. 
@@ -70,11 +71,21 @@ async def handler(websocket):
 
 port = int(os.environ.get("PORT", 8765)) # Needed for Azure
 
+async def process_request(path, request_headers):
+	if path == '/peer-count':
+		counts = {room_id: len(peers) for room_id, peers in rooms.items()}
+		body = json.dumps(counts).encode()
+		return (
+			HTTPStatus.OK,
+			[("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*")],
+			body
+		)
+
 async def main():
 	# Replace "0.0.0.0" with "localhost", and this can be a local server connected to, and port with 8765
 	# Just then also set network.js's signalingURL to "ws://localhost:8765"
 	# Plus, you'll want to connect to the server through the static website via two browsers. At least in my experience!
-	async with websockets.serve(handler, "0.0.0.0", port):
+	async with websockets.serve(handler, "0.0.0.0", port, process_request=process_request):
 		await asyncio.Future()
 
 asyncio.run(main())
