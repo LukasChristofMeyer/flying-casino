@@ -52,7 +52,7 @@ class PokerAI extends Player {
 		const full	= [...this._hand, ...this._comm]
 		const ht		= full.length >= 2 ? pokerHandType(full) : 'High Card'
 		const coeff = {
-			'High Card':8, 'Pair':6, 'Two Pair':5, 'Three of a Kind':4,
+			'High Card':7, 'Pair':5, 'Two Pair':5, 'Three of a Kind':4,
 			'Straight':3, 'Flush':3, 'Full House':2, 'Four of a Kind':1, 'Straight Flush':1
 		}[ht] ?? 10
 		const roll = Math.random() * coeff
