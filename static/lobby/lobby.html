@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <head>
 	<script defer type="module" src="lobby.js"></script>
+	<script defer type="module" src="statViewing.js"></script>
 	<link rel="stylesheet" href="../main-page.css">
 	<link rel="stylesheet" href="lobby.css">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="../popup.css">
 	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:wght@700;900&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -126,9 +128,9 @@
 		</div><!-- /table-wrap -->
 	</div><!-- /room -->
 
-	<div class="statHover">
+	<div id="statHover">
 		Stats
-		<span class="popup"> </span>
+		<span id="popup"> </span>
 	</div>
 	
 	<div id="credits">
